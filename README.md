@@ -69,3 +69,4 @@ La autenticación es por JWT; el cliente envía el token en `Authorization: Bear
 ## Documentación
 
 - **Prompt frontend:** `docs/FRONTEND_PROMPT.md` (convenciones, fases, referencia al backend).
+# GYFSystem-frontend
