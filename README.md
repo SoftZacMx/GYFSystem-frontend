@@ -1,11 +1,11 @@
 # Files Manager — Frontend
 
-React + TypeScript + Vite + Tailwind. Consume la API en `../files-manager-api`.
+Aplicación web del **Files Manager**: gestión de documentos, estudiantes, usuarios, eventos, notificaciones y empresa. Desarrollada con React 19, TypeScript, Vite y Tailwind CSS. Consume la API en `../files-manager-api`.
 
 ## Requisitos
 
-- Node 18+
-- API backend corriendo (por defecto `http://localhost:3000`)
+- **Node.js** 18+
+- **API backend** en ejecución (por defecto `http://localhost:3000`)
 
 ## Instalación
 
@@ -15,9 +15,9 @@ npm install
 
 ## Variables de entorno
 
-Copia `.env.example` a `.env` y ajusta si hace falta:
+Copia `.env.example` a `.env` y ajusta la URL del API si es necesario:
 
-```
+```env
 VITE_API_URL=http://localhost:3000
 ```
 
@@ -27,24 +27,45 @@ VITE_API_URL=http://localhost:3000
 npm run dev
 ```
 
-Abre http://localhost:5173. Login con un usuario existente en la API.
+Abre [http://localhost:5173](http://localhost:5173). Inicia sesión con un usuario existente en la API.
 
-## Build
+## Scripts
 
-```bash
-npm run build
-```
+| Script | Descripción |
+|--------|-------------|
+| `npm run dev` | Servidor de desarrollo (Vite) |
+| `npm run build` | Compila para producción (TypeScript + Vite) |
+| `npm run preview` | Sirve la carpeta `dist/` localmente |
+| `npm run lint` | ESLint |
 
-Salida en `dist/`.
+La salida de build queda en `dist/`.
 
-## Estructura
+## Estructura del proyecto
 
-- `src/lib` — Cliente API, env
-- `src/types` — Tipos (API, auth, entidades)
-- `src/services` — Llamadas por dominio (auth, users, students, catalogs)
-- `src/contexts` — Theme, Auth
-- `src/theme` — Paleta desde color base (color2k), persistencia en localStorage
-- `src/pages` — Login, Dashboard, Usuarios, Estudiantes
-- `src/components` — ProtectedRoute, ThemePicker
+| Carpeta / archivo | Descripción |
+|-------------------|-------------|
+| `src/lib` | Cliente API (`api-client`), env (`env.ts`) |
+| `src/types` | Tipos compartidos (API, auth, entidades) |
+| `src/contexts` | `ThemeContext`, `AuthContext` |
+| `src/pages` | Páginas: Login, Dashboard, Usuarios, Estudiantes, Documentos, Categorías, Eventos, Notificaciones, Empresa, Más |
+| `src/components` | `Layout`, `BottomNav`, `ProtectedRoute`, `RoleProtectedRoute`, `ThemePicker`, `ListScreenLayout` |
+| `src/theme` | Paleta (color2k), persistencia en `localStorage` |
 
-Las fases completas y referencias al backend están en `docs/FRONTEND_PROMPT.md`.
+## Rutas principales
+
+- `/login` — Inicio de sesión
+- `/` — Dashboard (protegida)
+- `/users`, `/users/new`, `/users/:id` — Usuarios (protegida por rol)
+- `/students`, `/students/new`, `/students/:id` — Estudiantes (protegida por rol)
+- `/document-categories` — Categorías de documentos
+- `/documents` — Documentos
+- `/events` — Eventos
+- `/notifications` — Notificaciones
+- `/company` — Datos de la empresa
+- `/more` — Más opciones (protegida por rol)
+
+La autenticación es por JWT; el cliente envía el token en `Authorization: Bearer <token>`.
+
+## Documentación
+
+- **Prompt frontend:** `docs/FRONTEND_PROMPT.md` (convenciones, fases, referencia al backend).
