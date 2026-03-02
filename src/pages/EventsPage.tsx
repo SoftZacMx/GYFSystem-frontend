@@ -5,21 +5,61 @@ import { ApiError } from '@/types/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { isStaffRole } from '@/types/auth';
 import { fetchEvents, createEvent, updateEvent, deleteEvent } from '@/services/events.service';
-import { ListScreenLayout, ListCard } from '@/components/ListScreenLayout';
+
+const APP_PRIMARY = '#136dec';
+const APP_BG = '#f6f7f8';
+const ACCENT_BLUE = '#136dec';
+const ACCENT_GREEN = '#10b981';
+const ACCENT_ORANGE = '#f59e0b';
+
+const WEEKDAYS = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+type ViewTab = 'calendar' | 'list' | 'pending';
+
+function formatEventDate(d: string): string {
+  const date = new Date(d);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = MONTHS[date.getMonth()].slice(0, 3).toUpperCase();
+  return `${day} ${month}`;
+}
+
+function formatEventTime(d: string): string {
+  return new Date(d).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function toDateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getDaysInMonth(year: number, month: number): (number | null)[] {
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month + 1, 0);
+  const startPad = first.getDay();
+  const days: (number | null)[] = Array(startPad).fill(null);
+  for (let d = 1; d <= last.getDate(); d++) days.push(d);
+  return days;
+}
+
+function getEventBarColor(index: number): string {
+  const colors = [ACCENT_BLUE, ACCENT_GREEN, ACCENT_ORANGE];
+  return colors[index % 3];
+}
 
 export function EventsPage() {
   const { user } = useAuth();
   const staff = user ? isStaffRole(user.roleId) : false;
   const [data, setData] = useState<EventDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<ViewTab>('calendar');
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -33,11 +73,31 @@ export function EventsPage() {
     load();
   }, []);
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return data;
-    const q = search.trim().toLowerCase();
-    return data.filter((ev) => ev.title.toLowerCase().includes(q));
-  }, [data, search]);
+  const todayKey = useMemo(() => toDateKey(new Date()), []);
+  const selectedKey = useMemo(() => toDateKey(selectedDate), [selectedDate]);
+
+  const datesWithEvents = useMemo(() => {
+    const set = new Set<string>();
+    data.forEach((ev) => set.add(toDateKey(new Date(ev.eventDate))));
+    return set;
+  }, [data]);
+
+  const eventsForSelectedDay = useMemo(() => {
+    return data
+      .filter((ev) => toDateKey(new Date(ev.eventDate)) === selectedKey)
+      .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+  }, [data, selectedKey]);
+
+  const pendingEvents = useMemo(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    return data
+      .filter((ev) => new Date(ev.eventDate) >= start)
+      .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+  }, [data]);
+
+  const prevMonth = () => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1));
+  const nextMonth = () => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1));
 
   const openCreate = () => {
     setTitle('');
@@ -70,67 +130,222 @@ export function EventsPage() {
       .finally(() => setSaving(false));
   };
 
-  const handleDelete = (ev: EventDto) => {
-    if (!window.confirm('¿Eliminar este evento?')) return;
-    setDeletingId(ev.id);
-    deleteEvent(ev.id)
-      .then(() => {
-        toast.success('Evento eliminado');
-        load();
-      })
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al eliminar'))
-      .finally(() => setDeletingId(null));
-  };
+  const displayEvents = tab === 'calendar' ? eventsForSelectedDay : tab === 'pending' ? pendingEvents : data;
+  const displayTitle =
+    tab === 'calendar' ? `Eventos del ${selectedDate.getDate()} de ${MONTHS[selectedDate.getMonth()]}` : tab === 'pending' ? 'Eventos pendientes' : 'Todos los eventos';
 
   return (
-    <ListScreenLayout
-      title="Eventos"
-      icon="event"
-      addLabel={staff ? 'Nuevo evento' : undefined}
-      onAdd={staff ? openCreate : undefined}
-      searchPlaceholder="Buscar eventos..."
-      searchValue={search}
-      onSearchChange={setSearch}
-      fab={staff}
-      onFabClick={staff ? openCreate : undefined}
-    >
-      {loading ? (
-        <p className="py-8 text-center text-slate-500">Cargando...</p>
-      ) : filtered.length === 0 ? (
-        <p className="py-8 text-center text-slate-500">No hay eventos</p>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((ev) => (
-            <ListCard
-              key={ev.id}
-              avatar={<span className="material-symbols-outlined text-slate-500">event</span>}
-              title={ev.title}
-              subtitle={new Date(ev.eventDate).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' })}
-              meta={ev.description ? <span className="line-clamp-1">{ev.description}</span> : null}
-              onMenuClick={staff ? () => openEdit(ev) : undefined}
-            />
+    <div className="min-h-full font-display" style={{ backgroundColor: APP_BG }}>
+      <div className="border-b border-slate-200 bg-white px-4 pb-3 pt-4">
+        <h1 className="text-center text-xl font-bold tracking-tight text-slate-800">Gestión de eventos</h1>
+        <div className="mt-3 flex gap-6 border-b border-slate-200">
+          {(
+            [
+              { id: 'calendar' as ViewTab, label: 'Calendario' },
+              { id: 'list' as ViewTab, label: 'Vista lista' },
+              { id: 'pending' as ViewTab, label: 'Pendientes' },
+            ] as const
+          ).map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              className="relative pb-3 pt-1 text-sm font-medium transition"
+              style={{ color: tab === id ? APP_PRIMARY : '#64748b' }}
+            >
+              {label}
+              {tab === id && (
+                <span
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                  style={{ backgroundColor: APP_PRIMARY }}
+                />
+              )}
+            </button>
           ))}
         </div>
+      </div>
+
+      <div className="p-4 md:mx-auto md:max-w-4xl md:p-6 lg:max-w-5xl">
+        {tab === 'calendar' && (
+          <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={prevMonth}
+                className="flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+              >
+                <span className="material-symbols-outlined text-xl">chevron_left</span>
+              </button>
+              <span className="text-sm font-semibold text-slate-800">
+                {MONTHS[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+              </span>
+              <button
+                type="button"
+                onClick={nextMonth}
+                className="flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+              >
+                <span className="material-symbols-outlined text-xl">chevron_right</span>
+              </button>
+            </div>
+            <div className="grid grid-cols-7 gap-1 text-center">
+              {WEEKDAYS.map((wd) => (
+                <div key={wd} className="py-1 text-xs font-medium text-slate-500">
+                  {wd}
+                </div>
+              ))}
+              {getDaysInMonth(calendarMonth.getFullYear(), calendarMonth.getMonth()).map((day, i) => {
+                if (day === null)
+                  return <div key={`pad-${i}`} />;
+                const date = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), day);
+                const key = toDateKey(date);
+                const isSelected = key === selectedKey;
+                const isToday = key === todayKey;
+                const hasEvents = datesWithEvents.has(key);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      setSelectedDate(date);
+                      setCalendarMonth(date);
+                    }}
+                    className="flex flex-col items-center gap-0.5 py-2 text-sm"
+                  >
+                    <span
+                      className={`flex size-8 items-center justify-center rounded-full ${
+                        isSelected ? 'text-white' : isToday ? 'font-semibold text-[#136dec]' : 'text-slate-700'
+                      }`}
+                      style={isSelected ? { backgroundColor: APP_PRIMARY } : isToday ? { backgroundColor: `${APP_PRIMARY}20` } : undefined}
+                    >
+                      {day}
+                    </span>
+                    {hasEvents && (
+                      <span
+                        className="size-1.5 rounded-full"
+                        style={{ backgroundColor: APP_PRIMARY }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-slate-800">{displayTitle}</h2>
+            <span className="text-sm font-medium" style={{ color: APP_PRIMARY }}>
+              {displayEvents.length} activos
+            </span>
+          </div>
+
+          {loading ? (
+            <p className="py-8 text-center text-slate-500">Cargando...</p>
+          ) : displayEvents.length === 0 ? (
+            <p className="py-8 text-center text-slate-500">No hay eventos</p>
+          ) : (
+            <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 lg:grid-cols-2">
+              {displayEvents.map((ev, index) => {
+                const barColor = getEventBarColor(index);
+                return (
+                  <div
+                    key={ev.id}
+                    className="flex rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+                  >
+                    <div className="w-1 shrink-0" style={{ backgroundColor: barColor }} />
+                    <div className="min-w-0 flex-1 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase" style={{ color: barColor }}>
+                            {formatEventDate(ev.eventDate)}
+                          </p>
+                          <h3 className="mt-0.5 font-semibold text-slate-800">{ev.title}</h3>
+                        </div>
+                        {staff && (
+                          <button
+                            type="button"
+                            onClick={() => openEdit(ev)}
+                            className="shrink-0 rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                            aria-label="Opciones"
+                          >
+                            <span className="material-symbols-outlined text-xl">more_vert</span>
+                          </button>
+                        )}
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm text-slate-500">
+                        <span className="flex items-center gap-1">
+                          <span className="material-symbols-outlined text-lg">schedule</span>
+                          {formatEventTime(ev.eventDate)}
+                        </span>
+                      </div>
+                      {ev.description && (
+                        <p className="mt-1.5 line-clamp-2 text-sm text-slate-500">{ev.description}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {staff && (
+        <button
+          type="button"
+          onClick={openCreate}
+          className="fixed bottom-20 right-4 flex size-14 items-center justify-center rounded-full text-white shadow-lg transition hover:opacity-90 active:scale-95 md:bottom-8"
+          style={{ backgroundColor: APP_PRIMARY }}
+          aria-label="Nuevo evento"
+        >
+          <span className="material-symbols-outlined text-3xl">edit_calendar</span>
+        </button>
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCreate(false)}>
+        <div
+          className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowCreate(false)}
+        >
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="mb-4 text-lg font-bold text-slate-800">{editingId == null ? 'Nuevo evento' : 'Editar evento'}</h3>
             <form onSubmit={handleSubmit}>
               <label className="mb-2 block text-sm font-medium text-slate-700">Título</label>
-              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800" required />
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800"
+                required
+              />
               <label className="mb-2 block text-sm font-medium text-slate-700">Descripción</label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800" rows={3} />
-              <label className="mb-2 block text-sm font-medium text-slate-700">Fecha</label>
-              <input type="datetime-local" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="mb-6 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800" required />
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800"
+                rows={3}
+              />
+              <label className="mb-2 block text-sm font-medium text-slate-700">Fecha y hora</label>
+              <input
+                type="datetime-local"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                className="mb-6 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800"
+                required
+              />
               <div className="flex justify-end gap-2">
                 {editingId != null && (
                   <button
                     type="button"
                     onClick={() => {
                       if (window.confirm('¿Eliminar este evento?')) {
-                        deleteEvent(editingId).then(() => { setShowCreate(false); load(); }).catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error'));
+                        deleteEvent(editingId)
+                          .then(() => {
+                            setShowCreate(false);
+                            load();
+                          })
+                          .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error'));
                       }
                     }}
                     className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600"
@@ -138,13 +353,26 @@ export function EventsPage() {
                     Eliminar
                   </button>
                 )}
-                <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600">Cancelar</button>
-                <button type="submit" disabled={saving} className="rounded-xl bg-[#136dec] px-4 py-2 text-sm font-medium text-white disabled:opacity-70">Guardar</button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-70"
+                  style={{ backgroundColor: APP_PRIMARY }}
+                >
+                  Guardar
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </ListScreenLayout>
+    </div>
   );
 }

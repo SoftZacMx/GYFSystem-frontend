@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { DocumentDto, DocumentCategoryDto, StudentDto } from '@/types/entities';
@@ -6,8 +6,18 @@ import { ApiError } from '@/types/api';
 import { fetchDocuments, uploadDocument, deleteDocument, downloadDocument } from '@/services/documents.service';
 import { fetchDocumentCategories } from '@/services/document-categories.service';
 import { fetchStudents, fetchStudentById } from '@/services/students.service';
+import { FilterPills } from '@/components/ListScreenLayout';
 
 const PRIMARY = '#136dec';
+const GRADE_COLORS: Record<string, string> = {
+  '1': 'bg-blue-100 text-blue-800',
+  '2': 'bg-emerald-100 text-emerald-800',
+  '3': 'bg-amber-100 text-amber-800',
+  '4': 'bg-violet-100 text-violet-800',
+  '5': 'bg-rose-100 text-rose-800',
+  '6': 'bg-cyan-100 text-cyan-800',
+};
+const defaultGradeStyle = 'bg-slate-100 text-slate-700';
 const MAX_SIZE_MB = 10;
 const ACCEPT = '.pdf,.jpg,.jpeg,.png';
 
@@ -36,7 +46,30 @@ export function DocumentsPage() {
   const [uploadCategoryId, setUploadCategoryId] = useState<number | ''>('');
   const [uploading, setUploading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [showStudentDialog, setShowStudentDialog] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentGradeFilter, setStudentGradeFilter] = useState<string | 'all'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const grades = useMemo(() => {
+    const set = new Set(students.map((s) => s.grade).filter(Boolean));
+    return Array.from(set).sort().map((g) => ({ id: g, label: g }));
+  }, [students]);
+
+  const filteredStudents = useMemo(() => {
+    let list = students;
+    if (studentSearch.trim()) {
+      const q = studentSearch.trim().toLowerCase();
+      list = list.filter((s) => s.fullName.toLowerCase().includes(q) || s.curp?.toLowerCase().includes(q));
+    }
+    if (studentGradeFilter !== 'all') list = list.filter((s) => s.grade === studentGradeFilter);
+    return list;
+  }, [students, studentSearch, studentGradeFilter]);
+
+  const getGradeStyle = (g: string) => {
+    const num = g.replace(/\D/g, '').slice(0, 1);
+    return GRADE_COLORS[num] ?? defaultGradeStyle;
+  };
 
   useEffect(() => {
     setUploadStudentId(validStudentId ?? '');
@@ -68,8 +101,13 @@ export function DocumentsPage() {
 
   useEffect(() => {
     fetchDocumentCategories().then(setCategories).catch(() => {});
-    if (!validStudentId) fetchStudents({ limit: 100 }).then((r) => setStudents(r.data)).catch(() => {});
-  }, [validStudentId]);
+  }, []);
+
+  useEffect(() => {
+    if (!validStudentId || showStudentDialog) {
+      fetchStudents({ page: 1, limit: 100 }).then((r) => setStudents(r.data)).catch(() => {});
+    }
+  }, [validStudentId, showStudentDialog]);
 
   const getCategoryName = (id: number) => categories.find((c) => c.id === id)?.name ?? 'Documento';
   const getStudentName = (id: number) => students.find((s) => s.id === id)?.fullName ?? 'Estudiante #' + id;
@@ -122,7 +160,7 @@ export function DocumentsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-24">
+    <div className="mx-auto max-w-5xl px-4 pb-24">
       <div className="flex items-center justify-between py-4">
         <h1 className="text-xl font-bold tracking-tight text-slate-800">Repositorio</h1>
       </div>
@@ -136,8 +174,9 @@ export function DocumentsPage() {
         </div>
       )}
 
-      {/* Upload area */}
-      <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:min-h-[calc(100vh-12rem)] lg:items-stretch">
+        {/* Upload area — izquierda en desktop (centrado en medio de la vista), arriba en móvil */}
+        <div className="flex flex-col justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6">
         <form onSubmit={handleUpload} className="flex flex-col items-center">
           <div className="flex size-16 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
             <span className="material-symbols-outlined text-4xl">cloud_upload</span>
@@ -168,17 +207,32 @@ export function DocumentsPage() {
               {!validStudentId && (
                 <div>
                   <label className="mb-1 block text-left text-sm font-medium text-slate-700">Estudiante</label>
-                  <select
-                    value={uploadStudentId === '' ? '' : uploadStudentId}
-                    onChange={(e) => setUploadStudentId(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800"
-                    required
+                  <button
+                    type="button"
+                    onClick={() => setShowStudentDialog(true)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-slate-800 transition hover:bg-slate-50 focus:outline-0 focus:ring-2 focus:ring-[#136dec]/30"
                   >
-                    <option value="">Seleccionar</option>
-                    {students.map((s) => (
-                      <option key={s.id} value={s.id}>{s.fullName}</option>
-                    ))}
-                  </select>
+                    {uploadStudentId !== '' ? (
+                      <span className="flex items-center justify-between gap-2">
+                        {getStudentName(uploadStudentId)}
+                        <span className="material-symbols-outlined text-slate-400 text-xl">expand_more</span>
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-between gap-2 text-slate-500">
+                        Seleccionar alumno
+                        <span className="material-symbols-outlined text-xl">person_search</span>
+                      </span>
+                    )}
+                  </button>
+                  {uploadStudentId !== '' && (
+                    <button
+                      type="button"
+                      onClick={() => setUploadStudentId('')}
+                      className="mt-1 text-xs font-medium text-slate-500 hover:text-slate-700"
+                    >
+                      Cambiar alumno
+                    </button>
+                  )}
                 </div>
               )}
               <div>
@@ -206,10 +260,10 @@ export function DocumentsPage() {
             </div>
           )}
         </form>
-      </div>
+        </div>
 
-      {/* Documents list (for this student or recent) */}
-      <section className="mt-6">
+        {/* Archivos cargados — derecha en desktop, abajo en móvil */}
+        <section>
         <h2 className="text-lg font-bold text-slate-800">
           {validStudentId ? 'Documentos del alumno' : 'Documentos recientes'}
         </h2>
@@ -264,7 +318,89 @@ export function DocumentsPage() {
             ))}
           </ul>
         )}
-      </section>
+        </section>
+      </div>
+
+      {/* Dialog selección de alumno */}
+      {showStudentDialog && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowStudentDialog(false)}
+        >
+          <div
+            className="flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border border-slate-200 bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 p-4">
+              <h3 className="text-lg font-bold text-slate-800">Seleccionar alumno</h3>
+              <button
+                type="button"
+                onClick={() => setShowStudentDialog(false)}
+                className="flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                aria-label="Cerrar"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+            <div className="flex flex-col overflow-hidden p-4">
+              <div className="relative mb-3">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
+                  search
+                </span>
+                <input
+                  type="search"
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                  placeholder="Buscar por nombre o CURP..."
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-[#136dec]/30"
+                />
+              </div>
+              <div className="mb-3">
+                <FilterPills
+                  options={grades}
+                  activeId={studentGradeFilter === 'all' ? 'all' : studentGradeFilter}
+                  onChange={(id) => setStudentGradeFilter(id === 'all' ? 'all' : id)}
+                  labelAll="Todos los grados"
+                />
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-slate-200">
+                {filteredStudents.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-slate-500">No hay estudiantes</p>
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {filteredStudents.map((s) => (
+                      <li key={s.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUploadStudentId(s.id);
+                            setShowStudentDialog(false);
+                            setStudentSearch('');
+                            setStudentGradeFilter('all');
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                        >
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600 font-semibold">
+                            {s.fullName.slice(0, 1)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-slate-800">{s.fullName}</p>
+                            <p className="text-xs text-slate-500">{s.curp} · {s.grade}</p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${getGradeStyle(s.grade)}`}>
+                            {s.grade}
+                          </span>
+                          <span className="material-symbols-outlined text-slate-400 text-xl">chevron_right</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

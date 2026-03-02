@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { isStaffRole } from '@/types/auth';
@@ -6,42 +6,9 @@ import { fetchStudents } from '@/services/students.service';
 import { fetchUsers } from '@/services/users.service';
 import { fetchEvents } from '@/services/events.service';
 import { fetchDocuments } from '@/services/documents.service';
+import { StatCard } from '@/components/StatCard';
 
 const PRIMARY = '#136dec';
-
-function StatCard({
-  label,
-  value,
-  trend,
-  trendUp,
-  badge,
-  icon,
-  iconBg,
-}: {
-  label: string;
-  value: string | number;
-  trend?: string;
-  trendUp?: boolean;
-  badge?: string;
-  icon: string;
-  iconBg: string;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between">
-        <div className="flex size-12 items-center justify-center rounded-xl text-slate-600" style={{ backgroundColor: iconBg }}>
-          <span className="material-symbols-outlined text-2xl">{icon}</span>
-        </div>
-        {badge && <span className="text-xs font-medium text-red-600">{badge}</span>}
-      </div>
-      <p className="mt-3 text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-800">{value}</p>
-      {trend != null && (
-        <p className={`mt-1 text-sm font-medium ${trendUp ? 'text-emerald-600' : 'text-red-600'}`}>{trend}</p>
-      )}
-    </div>
-  );
-}
 
 function fileNameFromUrl(url: string): string {
   try {
@@ -55,7 +22,7 @@ function fileNameFromUrl(url: string): string {
 export function DashboardPage() {
   const { user } = useAuth();
   const staff = user ? isStaffRole(user.roleId) : false;
-  const [stats, setStats] = useState({ students: 0, users: 0, pending: 0, events: 0 });
+  const [stats, setStats] = useState({ students: 0, users: 0, events: 0 });
   const [recentDocs, setRecentDocs] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,7 +44,6 @@ export function DashboardPage() {
         setStats({
           students: staff ? (results[0] as { meta?: { total?: number }; data?: unknown[] }).meta?.total ?? (results[0] as { data?: unknown[] }).data?.length ?? 0 : 0,
           users: staff ? (results[1] as { meta?: { total?: number }; data?: unknown[] }).meta?.total ?? (results[1] as { data?: unknown[] }).data?.length ?? 0 : 0,
-          pending: 0,
           events: eventsRes.meta?.total ?? eventsRes.data?.length ?? 0,
         });
         setRecentDocs(
@@ -100,6 +66,38 @@ export function DashboardPage() {
 
   const chartData = [40, 75, 60, 85, 50];
 
+  const statCards = useMemo(() => {
+    const cards: Array<{
+      label: string;
+      value: string | number;
+      trend?: string;
+      trendUp?: boolean;
+      config: { icon: string; iconBg: string };
+    }> = [];
+    if (staff) {
+      cards.push(
+        {
+          label: 'Estudiantes',
+          value: loading ? '...' : stats.students,
+          trend: '+3%',
+          trendUp: true,
+          config: { icon: 'group', iconBg: '#dbeafe' },
+        },
+        {
+          label: 'Usuarios activos',
+          value: loading ? '...' : stats.users,
+          config: { icon: 'person_check', iconBg: '#d1fae5' },
+        },
+      );
+    }
+    cards.push({
+      label: 'Eventos',
+      value: loading ? '...' : String(stats.events).padStart(2, '0'),
+      config: { icon: 'event', iconBg: '#e9d5ff' },
+    });
+    return cards;
+  }, [staff, loading, stats.students, stats.users, stats.events]);
+
   return (
     <div className="min-h-full bg-[#f6f7f8] font-display">
       <div className="mx-auto max-w-5xl px-4 py-6">
@@ -110,38 +108,17 @@ export function DashboardPage() {
           Gestiona documentos y registros escolares
         </p>
 
-        <div className={`mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 ${staff ? 'lg:grid-cols-4' : 'lg:grid-cols-2'}`}>
-          {staff && (
-            <>
-              <StatCard
-                label="Estudiantes"
-                value={loading ? '...' : stats.students}
-                trend="+3%"
-                trendUp
-                icon="group"
-                iconBg="#dbeafe"
-              />
-              <StatCard
-                label="Usuarios activos"
-                value={loading ? '...' : stats.users}
-                icon="person_check"
-                iconBg="#d1fae5"
-              />
-            </>
-          )}
-          <StatCard
-            label="Pendientes"
-            value={loading ? '...' : stats.pending}
-            badge="Alto"
-            icon="description"
-            iconBg="#fed7aa"
-          />
-          <StatCard
-            label="Eventos"
-            value={loading ? '...' : String(stats.events).padStart(2, '0')}
-            icon="event"
-            iconBg="#e9d5ff"
-          />
+        <div className={`mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 ${staff ? 'lg:grid-cols-4' : 'lg:grid-cols-1'}`}>
+          {statCards.map((card) => (
+            <StatCard
+              key={card.label}
+              label={card.label}
+              value={card.value}
+              trend={card.trend}
+              trendUp={card.trendUp}
+              config={card.config}
+            />
+          ))}
         </div>
 
         <section className="mt-8">

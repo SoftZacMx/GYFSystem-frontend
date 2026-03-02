@@ -7,35 +7,44 @@ import {
   type ReactNode,
 } from 'react';
 import { applyThemeToDocument } from '@/theme/palette';
-import { getStoredTheme, setStoredTheme } from '@/theme/theme-storage';
+import { getStoredTheme, setStoredTheme, getStoredAccent, setStoredAccent } from '@/theme/theme-storage';
 
 type ThemeContextValue = {
   primaryColor: string;
+  accentColor: string;
   setPrimaryColor: (hex: string) => void;
+  setAccentColor: (hex: string) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-const DEFAULT_PRIMARY = '#1e3a5f';
+const DEFAULT_PRIMARY = '#136dec';
+const DEFAULT_ACCENT = '#FBBF24';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [primaryColor, setPrimaryState] = useState<string>(() => {
-    return getStoredTheme() || DEFAULT_PRIMARY;
-  });
+  const [primaryColor, setPrimaryState] = useState<string>(() => getStoredTheme() || DEFAULT_PRIMARY);
+  const [accentColor, setAccentState] = useState<string>(() => getStoredAccent() || DEFAULT_ACCENT);
 
   const setPrimaryColor = useCallback((hex: string) => {
     const normalized = hex.startsWith('#') ? hex : `#${hex}`;
     setStoredTheme(normalized);
-    applyThemeToDocument(normalized);
     setPrimaryState(normalized);
-  }, []);
+    applyThemeToDocument(normalized, accentColor);
+  }, [accentColor]);
 
-  useEffect(() => {
-    applyThemeToDocument(primaryColor);
+  const setAccentColor = useCallback((hex: string) => {
+    const normalized = hex.startsWith('#') ? hex : `#${hex}`;
+    setStoredAccent(normalized);
+    setAccentState(normalized);
+    applyThemeToDocument(primaryColor, normalized);
   }, [primaryColor]);
 
+  useEffect(() => {
+    applyThemeToDocument(primaryColor, accentColor);
+  }, [primaryColor, accentColor]);
+
   return (
-    <ThemeContext.Provider value={{ primaryColor, setPrimaryColor }}>
+    <ThemeContext.Provider value={{ primaryColor, accentColor, setPrimaryColor, setAccentColor }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -9,11 +9,17 @@ import {
   deleteDocumentCategory,
 } from '@/services/document-categories.service';
 import { ListScreenLayout, ListCard } from '@/components/ListScreenLayout';
+import { PaginationBar } from '@/components/PaginationBar';
+
+const DEFAULT_PAGE_SIZE = 20;
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 export function DocumentCategoriesPage() {
   const [list, setList] = useState<DocumentCategoryDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [name, setName] = useState('');
@@ -37,6 +43,17 @@ export function DocumentCategoriesPage() {
     const q = search.trim().toLowerCase();
     return list.filter((c) => c.name.toLowerCase().includes(q) || (c.description ?? '').toLowerCase().includes(q));
   }, [list, search]);
+
+  const total = filtered.length;
+  const totalPages = total === 0 ? 1 : Math.ceil(total / pageSize);
+  const paginated = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages && totalPages >= 1) setPage(1);
+  }, [page, totalPages]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -92,17 +109,32 @@ export function DocumentCategoriesPage() {
       ) : filtered.length === 0 ? (
         <p className="py-8 text-center text-slate-500">No hay categorías</p>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((c) => (
-            <ListCard
-              key={c.id}
-              avatar={<span className="material-symbols-outlined text-slate-500">folder</span>}
-              title={c.name}
-              subtitle={c.description ?? undefined}
-              onMenuClick={() => openEdit(c)}
+        <>
+          <div className="space-y-3">
+            {paginated.map((c) => (
+              <ListCard
+                key={c.id}
+                avatar={<span className="material-symbols-outlined text-slate-500">folder</span>}
+                title={c.name}
+                subtitle={c.description ?? undefined}
+                onMenuClick={() => openEdit(c)}
+              />
+            ))}
+          </div>
+          {total > 0 && (
+            <PaginationBar
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={(p) => setPage(Math.max(1, Math.min(totalPages, p)))}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
             />
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {showModal && (

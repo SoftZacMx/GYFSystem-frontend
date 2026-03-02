@@ -43,7 +43,7 @@ export function generatePalette(hexBase: string): Record<number, string> {
   return result;
 }
 
-export function applyThemeToDocument(primaryHex: string): void {
+export function applyThemeToDocument(primaryHex: string, accentHex?: string | null): void {
   const hex = primaryHex.startsWith('#') ? primaryHex : `#${primaryHex}`;
   const root = document.documentElement;
   const light = lighten(hex, 0.85);
@@ -52,8 +52,12 @@ export function applyThemeToDocument(primaryHex: string): void {
   root.style.setProperty('--primary-foreground', '210 40% 98%');
   root.style.setProperty('--secondary', light.startsWith('#') ? hexToHslVar(light) : hslToVar(light));
   root.style.setProperty('--secondary-foreground', dark.startsWith('#') ? hexToHslVar(dark) : hslToVar(dark));
-  root.style.setProperty('--accent', light.startsWith('#') ? hexToHslVar(light) : hslToVar(light));
-  root.style.setProperty('--accent-foreground', dark.startsWith('#') ? hexToHslVar(dark) : hslToVar(dark));
+  const accent = accentHex && accentHex.trim()
+    ? (accentHex.startsWith('#') ? accentHex : `#${accentHex}`)
+    : light;
+  const accentDark = accentHex && accentHex.trim() ? darken(accent, 0.3) : dark;
+  root.style.setProperty('--accent', accent.startsWith('#') ? hexToHslVar(accent) : hslToVar(accent));
+  root.style.setProperty('--accent-foreground', accentDark.startsWith('#') ? hexToHslVar(accentDark) : hslToVar(accentDark));
   root.style.setProperty('--muted', '210 40% 96.1%');
   root.style.setProperty('--muted-foreground', '215.4 16.3% 46.9%');
 }
