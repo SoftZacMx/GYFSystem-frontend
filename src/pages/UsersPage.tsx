@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { UserDto } from '@/types/entities';
 import { ApiError } from '@/types/api';
@@ -7,7 +6,6 @@ import { fetchUsers } from '@/services/users.service';
 import { ListScreenLayout, ListCard } from '@/components/ListScreenLayout';
 
 export function UsersPage() {
-  const navigate = useNavigate();
   const [data, setData] = useState<UserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -34,13 +32,9 @@ export function UsersPage() {
     <ListScreenLayout
       title="Usuarios"
       icon="group"
-      addLabel="Nuevo usuario"
-      onAdd={() => navigate('/users/new')}
       searchPlaceholder="Buscar usuarios..."
       searchValue={search}
       onSearchChange={setSearch}
-      fab
-      onFabClick={() => navigate('/users/new')}
     >
       {loading ? (
         <p className="py-8 text-center text-slate-500">Cargando...</p>

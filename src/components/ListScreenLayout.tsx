@@ -34,7 +34,7 @@ export function ListScreenLayout({
   return (
     <div className="min-h-full font-display" style={{ backgroundColor: APP_BG }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
+      <div className="relative flex items-center justify-center px-4 pt-4 pb-3">
         <div className="flex items-center gap-3">
           <div
             className="flex size-10 shrink-0 items-center justify-center rounded-full text-white"
@@ -50,7 +50,7 @@ export function ListScreenLayout({
           <button
             type="button"
             onClick={onAdd}
-            className="flex size-10 items-center justify-center rounded-full text-white transition hover:opacity-90"
+            className="absolute right-4 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-white transition hover:opacity-90"
             style={{ backgroundColor: `${APP_PRIMARY}20` }}
             aria-label={addLabel}
           >

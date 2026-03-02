@@ -72,8 +72,6 @@ export function StudentsPage() {
     <ListScreenLayout
       title="Estudiantes"
       icon="school"
-      addLabel="Nuevo estudiante"
-      onAdd={() => navigate('/students/new')}
       searchPlaceholder="Buscar estudiantes..."
       searchValue={search}
       onSearchChange={setSearch}
@@ -85,8 +83,6 @@ export function StudentsPage() {
           labelAll="Todos los grados"
         />
       }
-      fab
-      onFabClick={() => navigate('/students/new')}
     >
       {loading ? (
         <p className="py-8 text-center text-slate-500">Cargando...</p>
