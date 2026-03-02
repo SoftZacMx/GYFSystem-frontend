@@ -104,7 +104,7 @@ export function DashboardPage() {
     <div className="min-h-full bg-[#f6f7f8] font-display">
       <div className="mx-auto max-w-5xl px-4 py-6">
         <h1 className="text-2xl font-bold tracking-tight text-slate-800 md:text-3xl">
-          Admin Dashboard
+          Dashboard
         </h1>
         <p className="mt-1 text-slate-600">
           Gestiona documentos y registros escolares

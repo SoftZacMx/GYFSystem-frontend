@@ -14,7 +14,6 @@ import { DocumentsPage } from '@/pages/DocumentsPage';
 import { EventsPage } from '@/pages/EventsPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { CompanyPage } from '@/pages/CompanyPage';
-import { MorePage } from '@/pages/MorePage';
 import { UserDetailPage } from '@/pages/UserDetailPage';
 import { UserCreatePage } from '@/pages/UserCreatePage';
 import { StudentDetailPage } from '@/pages/StudentDetailPage';
@@ -47,7 +46,7 @@ export default function App() {
               <Route path="events" element={<EventsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="company" element={<CompanyPage />} />
-              <Route path="more" element={<RoleProtectedRoute><MorePage /></RoleProtectedRoute>} />
+              <Route path="more" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
