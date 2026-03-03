@@ -18,14 +18,26 @@ export function clearStoredToken(): void {
 
 const UNAUTHORIZED_EVENT = 'fm:unauthorized';
 
+function emptySuccess(): { success: true; data: null; meta: { timestamp: string } } {
+  return { success: true, data: null, meta: { timestamp: new Date().toISOString() } };
+}
+
 async function parseResponse<T>(res: Response): Promise<T> {
-  const json = await res.json();
+  if (res.status === 204) {
+    return emptySuccess() as T;
+  }
+  const text = await res.text();
+  if (!text.trim()) {
+    if (res.ok) return emptySuccess() as T;
+    throw new ApiError(res.statusText || 'Request failed', 'INTERNAL_ERROR');
+  }
+  const json = JSON.parse(text) as Record<string, unknown>;
   if (!res.ok) {
     if (res.status === 401) {
       clearStoredToken();
       window.dispatchEvent(new CustomEvent(UNAUTHORIZED_EVENT));
     }
-    const err = json as ApiErrorPayload;
+    const err = json as unknown as ApiErrorPayload;
     if (err?.error) {
       throw new ApiError(
         err.error.message,
@@ -36,7 +48,7 @@ async function parseResponse<T>(res: Response): Promise<T> {
     throw new ApiError(res.statusText || 'Request failed', 'INTERNAL_ERROR');
   }
   if (json.success === false && json.error) {
-    const err = json as ApiErrorPayload;
+    const err = json as unknown as ApiErrorPayload;
     throw new ApiError(
       err.error.message,
       err.error.code as ErrorCode,
