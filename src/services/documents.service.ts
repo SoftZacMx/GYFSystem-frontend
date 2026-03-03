@@ -3,6 +3,24 @@ import type { ApiListSuccess, ApiSuccess } from '@/types/api';
 import type { DocumentDto } from '@/types/entities';
 import { getApiUrl } from '@/lib/env';
 
+export interface DocumentGroupStudent {
+  studentId: number;
+  fullName: string;
+  curp: string;
+  grade: string;
+  status: string;
+}
+
+export interface DocumentsGroupedByStudent {
+  student: DocumentGroupStudent;
+  documents: DocumentDto[];
+}
+
+export async function fetchDocumentsGroupedByMyStudents(): Promise<DocumentsGroupedByStudent[]> {
+  const res = await apiFetch<ApiSuccess<{ groups: DocumentsGroupedByStudent[] }>>('/documents/me/grouped');
+  return res.data.groups;
+}
+
 export type DocumentsQuery = {
   page?: number;
   limit?: number;

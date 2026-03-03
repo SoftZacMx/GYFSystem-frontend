@@ -1,12 +1,14 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { confirmDelete } from '@/lib/confirmDelete';
 import type { StudentDto } from '@/types/entities';
 import { ApiError } from '@/types/api';
-import { fetchStudents, deleteStudent } from '@/services/students.service';
+import { fetchStudents, fetchMyStudents, fetchStudentById, deleteStudent } from '@/services/students.service';
 import { ListScreenLayout, FilterPills, ListCard } from '@/components/ListScreenLayout';
 import { PaginationBar } from '@/components/PaginationBar';
 import type { ListMeta } from '@/types/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DEFAULT_PAGE_SIZE = 20;
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
@@ -22,6 +24,8 @@ const defaultGradeStyle = 'bg-slate-100 text-slate-700';
 
 export function StudentsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.roleId === 1;
   const [data, setData] = useState<StudentDto[]>([]);
   const [meta, setMeta] = useState<ListMeta | null>(null);
   const [page, setPage] = useState(1);
@@ -30,25 +34,54 @@ export function StudentsPage() {
   const [search, setSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState<string | 'all'>('all');
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [filesDialogStudent, setFilesDialogStudent] = useState<StudentDto | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchStudents({ page, limit: pageSize })
-      .then((res) => {
-        if (cancelled) return;
-        setData(res.data);
-        setMeta(res.meta ?? null);
-        setPage(res.meta?.page ?? 1);
-      })
-      .catch((err) => {
-        if (!cancelled) toast.error(err instanceof ApiError ? err.message : 'Error al cargar');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    if (isAdmin) {
+      fetchStudents({ page, limit: pageSize })
+        .then((res) => {
+          if (cancelled) return;
+          setData(res.data);
+          setMeta(res.meta ?? null);
+          setPage(res.meta?.page ?? 1);
+        })
+        .catch((err) => {
+          if (!cancelled) toast.error(err instanceof ApiError ? err.message : 'Error al cargar');
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    } else {
+      fetchMyStudents()
+        .then((list) => {
+          if (cancelled) return;
+          setData(list);
+          setMeta(null);
+          const needsEnrich =
+            list.length > 0 &&
+            (list[0].totalUploadFiles == null || !Array.isArray(list[0].files));
+          if (needsEnrich) {
+            Promise.all(list.map((s) => fetchStudentById(s.id)))
+              .then((fullList) => {
+                if (cancelled) return;
+                setData(fullList);
+              })
+              .catch((err) => {
+                if (!cancelled) toast.error(err instanceof ApiError ? err.message : 'Error al cargar detalle');
+              });
+          }
+        })
+        .catch((err) => {
+          if (!cancelled) toast.error(err instanceof ApiError ? err.message : 'Error al cargar');
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }
     return () => { cancelled = true; };
-  }, [page, pageSize]);
+  }, [isAdmin, page, pageSize]);
 
   const grades = useMemo(() => {
     const set = new Set(data.map((s) => s.grade).filter(Boolean));
@@ -65,23 +98,29 @@ export function StudentsPage() {
     return list;
   }, [data, search, gradeFilter]);
 
-  const total = meta?.total ?? 0;
+  const total = meta?.total ?? (isAdmin ? 0 : data.length);
 
   const handleDelete = (s: StudentDto) => {
-    if (!window.confirm(`¿Eliminar a ${s.fullName}?`)) return;
-    setDeletingId(s.id);
-    deleteStudent(s.id)
-      .then(() => {
-        toast.success('Estudiante eliminado');
-        return fetchStudents({ page, limit: pageSize });
-      })
-      .then((res) => {
-        setData(res.data);
-        setMeta(res.meta ?? null);
-        setPage(res.meta?.page ?? 1);
-      })
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al eliminar'))
-      .finally(() => setDeletingId(null));
+    confirmDelete({
+      message: `¿Eliminar a ${s.fullName}?`,
+      execute: () => {
+        setDeletingId(s.id);
+        return deleteStudent(s.id)
+          .then(() => {
+            if (isAdmin) {
+              return fetchStudents({ page, limit: pageSize }).then((res) => {
+                setData(res.data);
+                setMeta(res.meta ?? null);
+                setPage(res.meta?.page ?? 1);
+              });
+            }
+            return fetchMyStudents().then(setData);
+          })
+          .finally(() => setDeletingId(null));
+      },
+      successMessage: 'Estudiante eliminado',
+      errorMessage: 'Error al eliminar',
+    });
   };
 
   const getGradeStyle = (g: string) => {
@@ -104,8 +143,8 @@ export function StudentsPage() {
           labelAll="Todos los grados"
         />
       }
-      fab
-      onFabClick={() => navigate('/students/new')}
+      fab={isAdmin}
+      onFabClick={isAdmin ? () => navigate('/students/new') : undefined}
     >
       {loading ? (
         <p className="py-8 text-center text-slate-500">Cargando...</p>
@@ -131,6 +170,31 @@ export function StudentsPage() {
                       <span className="material-symbols-outlined text-base">badge</span>
                       {s.curp}
                     </span>
+                    {s.totalUploadFiles != null && s.totalPendingFiles != null && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700" title="Archivos cargados">
+                          {s.totalUploadFiles} cargados
+                        </span>
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700" title="Archivos pendientes">
+                          {s.totalPendingFiles} pendientes
+                        </span>
+                      </span>
+                    )}
+                    {Array.isArray(s.files) && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setFilesDialogStudent(s);
+                        }}
+                        className="flex size-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                        title="Ver archivos cargados"
+                        aria-label="Ver archivos"
+                      >
+                        <span className="material-symbols-outlined text-lg">folder_open</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -143,25 +207,27 @@ export function StudentsPage() {
                       <span className="material-symbols-outlined text-base">upload_file</span>
                       Subir documento
                     </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleDelete(s);
-                      }}
-                      className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
-                      title="Eliminar"
-                      aria-label="Eliminar"
-                    >
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                    </button>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDelete(s);
+                        }}
+                        className="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                        title="Eliminar"
+                        aria-label="Eliminar"
+                      >
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
+                    )}
                   </>
                 }
               />
             ))}
           </div>
-          {total > 0 && (
+          {isAdmin && total > 0 && meta && (
             <PaginationBar
               page={page}
               pageSize={pageSize}
@@ -175,6 +241,56 @@ export function StudentsPage() {
             />
           )}
         </>
+      )}
+
+      {filesDialogStudent && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setFilesDialogStudent(null)}
+        >
+          <div
+            className="flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border border-slate-200 bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 p-4">
+              <h3 className="text-lg font-bold text-slate-800">
+                Archivos · {filesDialogStudent.fullName}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setFilesDialogStudent(null)}
+                className="flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                aria-label="Cerrar"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+            <ul className="min-h-0 flex-1 overflow-y-auto p-4">
+              {filesDialogStudent.files.length === 0 ? (
+                <li className="py-4 text-center text-sm text-slate-500">Sin categorías definidas</li>
+              ) : (
+                filesDialogStudent.files.map((f) => (
+                  <li
+                    key={f.category}
+                    className="flex items-center justify-between gap-3 border-b border-slate-100 py-3 last:border-0"
+                  >
+                    <span className="font-medium text-slate-800">{f.category}</span>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        f.isUpload ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                      }`}
+                    >
+                      {f.isUpload ? 'Cargado' : 'Pendiente'}
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+            <div className="border-t border-slate-200 p-3 text-center text-xs text-slate-500">
+              {filesDialogStudent.totalUploadFiles} cargados · {filesDialogStudent.totalPendingFiles} pendientes
+            </div>
+          </div>
+        </div>
       )}
     </ListScreenLayout>
   );

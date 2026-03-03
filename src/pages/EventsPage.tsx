@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
+import { confirmDelete } from '@/lib/confirmDelete';
 import type { EventDto } from '@/types/entities';
 import { ApiError } from '@/types/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { isStaffRole } from '@/types/auth';
 import { fetchEvents, createEvent, updateEvent, deleteEvent } from '@/services/events.service';
 
 const APP_PRIMARY = '#136dec';
@@ -48,7 +48,7 @@ function getEventBarColor(index: number): string {
 
 export function EventsPage() {
   const { user } = useAuth();
-  const staff = user ? isStaffRole(user.roleId) : false;
+  const canManageEvents = user?.roleId === 1;
   const [data, setData] = useState<EventDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<ViewTab>('calendar');
@@ -262,7 +262,7 @@ export function EventsPage() {
                           </p>
                           <h3 className="mt-0.5 font-semibold text-slate-800">{ev.title}</h3>
                         </div>
-                        {staff && (
+                        {canManageEvents && (
                           <button
                             type="button"
                             onClick={() => openEdit(ev)}
@@ -291,7 +291,7 @@ export function EventsPage() {
         </section>
       </div>
 
-      {staff && (
+      {canManageEvents && (
         <button
           type="button"
           onClick={openCreate}
@@ -303,7 +303,7 @@ export function EventsPage() {
         </button>
       )}
 
-      {showCreate && (
+      {canManageEvents && showCreate && (
         <div
           className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 p-4"
           onClick={() => setShowCreate(false)}
@@ -339,14 +339,16 @@ export function EventsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm('¿Eliminar este evento?')) {
-                        deleteEvent(editingId)
-                          .then(() => {
+                      confirmDelete({
+                        message: '¿Eliminar este evento?',
+                        execute: () =>
+                          deleteEvent(editingId).then(() => {
                             setShowCreate(false);
                             load();
-                          })
-                          .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error'));
-                      }
+                          }),
+                        successMessage: 'Evento eliminado',
+                        errorMessage: 'Error al eliminar',
+                      });
                     }}
                     className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600"
                   >

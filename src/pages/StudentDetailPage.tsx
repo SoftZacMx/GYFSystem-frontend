@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { confirmDelete } from '@/lib/confirmDelete';
 import type { StudentDto, ParentOfStudentDto, DocumentDto, DocumentCategoryDto } from '@/types/entities';
 import { ApiError } from '@/types/api';
 import { fetchStudentById, updateStudent, deleteStudent } from '@/services/students.service';
 import { fetchParentsByStudentId, associateParentStudent, disassociateParentStudent } from '@/services/parent-students.service';
-import { fetchUsers } from '@/services/users.service';
 import { fetchDocuments, deleteDocument, downloadDocument } from '@/services/documents.service';
 import { fetchDocumentCategories } from '@/services/document-categories.service';
-import type { UserDto } from '@/types/entities';
+import { useAuth } from '@/contexts/AuthContext';
+import { SelectEntityDialog } from '@/components/SelectEntityDialog';
 
 const PRIMARY = '#136dec';
 
@@ -24,11 +25,12 @@ function fileNameFromUrl(url: string): string {
 export function StudentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.roleId === 1;
   const [student, setStudent] = useState<StudentDto | null>(null);
   const [parents, setParents] = useState<ParentOfStudentDto[]>([]);
   const [documents, setDocuments] = useState<DocumentDto[]>([]);
   const [categories, setCategories] = useState<DocumentCategoryDto[]>([]);
-  const [allUsers, setAllUsers] = useState<UserDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -37,7 +39,6 @@ export function StudentDetailPage() {
   const [status, setStatus] = useState('active');
   const [saving, setSaving] = useState(false);
   const [showAssociate, setShowAssociate] = useState(false);
-  const [associateUserId, setAssociateUserId] = useState<number | ''>('');
   const [associating, setAssociating] = useState(false);
   const [disassociatingId, setDisassociatingId] = useState<number | null>(null);
   const [downloadingDocId, setDownloadingDocId] = useState<number | null>(null);
@@ -70,10 +71,6 @@ export function StudentDetailPage() {
       .finally(() => setLoading(false));
   }, [studentId, navigate]);
 
-  useEffect(() => {
-    fetchUsers({ limit: 500 }).then((r) => setAllUsers(r.data)).catch(() => {});
-  }, []);
-
   const getCategoryName = (categoryId: number) =>
     categories.find((c) => c.id === categoryId)?.name ?? 'Documento';
 
@@ -89,13 +86,12 @@ export function StudentDetailPage() {
   };
 
   const handleDeleteDocument = (doc: DocumentDto) => {
-    if (!window.confirm('¿Eliminar este documento?')) return;
-    deleteDocument(doc.id)
-      .then(() => {
-        toast.success('Documento eliminado');
-        loadDocuments();
-      })
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al eliminar'));
+    confirmDelete({
+      message: '¿Eliminar este documento?',
+      execute: () => deleteDocument(doc.id).then(loadDocuments),
+      successMessage: 'Documento eliminado',
+      errorMessage: 'Error al eliminar',
+    });
   };
 
   const handleUpdate = (e: React.FormEvent) => {
@@ -113,24 +109,21 @@ export function StudentDetailPage() {
   };
 
   const handleDelete = () => {
-    if (Number.isNaN(studentId) || !window.confirm('¿Eliminar este estudiante?')) return;
-    deleteStudent(studentId)
-      .then(() => {
-        toast.success('Estudiante eliminado');
-        navigate('/students');
-      })
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al eliminar'));
+    if (Number.isNaN(studentId)) return;
+    confirmDelete({
+      message: '¿Eliminar este estudiante?',
+      execute: () => deleteStudent(studentId).then(() => navigate('/students')),
+      successMessage: 'Estudiante eliminado',
+      errorMessage: 'Error al eliminar',
+    });
   };
 
-  const handleAssociate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (associateUserId === '') return;
+  const handleAssociateUser = (userId: number) => {
     setAssociating(true);
-    associateParentStudent({ userId: associateUserId, studentId })
+    associateParentStudent({ userId, studentId })
       .then(() => {
         toast.success('Padre/tutor asociado');
         setShowAssociate(false);
-        setAssociateUserId('');
         fetchParentsByStudentId(studentId).then(setParents);
       })
       .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al asociar'))
@@ -138,15 +131,18 @@ export function StudentDetailPage() {
   };
 
   const handleDisassociate = (userId: number) => {
-    if (!window.confirm('¿Desasociar este padre/tutor?')) return;
-    setDisassociatingId(userId);
-    disassociateParentStudent(userId, studentId)
-      .then(() => {
-        toast.success('Desasociado');
-        fetchParentsByStudentId(studentId).then(setParents);
-      })
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error'))
-      .finally(() => setDisassociatingId(null));
+    confirmDelete({
+      message: '¿Desasociar este padre/tutor?',
+      actionLabel: 'Desasociar',
+      execute: () => {
+        setDisassociatingId(userId);
+        return disassociateParentStudent(userId, studentId)
+          .then(() => fetchParentsByStudentId(studentId).then(setParents))
+          .finally(() => setDisassociatingId(null));
+      },
+      successMessage: 'Desasociado',
+      errorMessage: 'Error al desasociar',
+    });
   };
 
   if (loading || !student) {
@@ -157,8 +153,7 @@ export function StudentDetailPage() {
     );
   }
 
-  const alreadyLinked = parents.map((p) => p.userId);
-  const availableUsers = allUsers.filter((u) => !alreadyLinked.includes(u.id));
+  const alreadyLinkedUserIds = parents.map((p) => p.userId);
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-8">
@@ -319,24 +314,15 @@ export function StudentDetailPage() {
         </ul>
       </section>
 
-      {showAssociate && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAssociate(false)}>
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-4 text-lg font-bold text-slate-800">Asociar padre/tutor</h3>
-            <form onSubmit={handleAssociate}>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Usuario</label>
-              <select value={associateUserId === '' ? '' : associateUserId} onChange={(e) => setAssociateUserId(e.target.value === '' ? '' : Number(e.target.value))} className="mb-4 w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required>
-                <option value="">Seleccionar</option>
-                {availableUsers.map((u) => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
-              </select>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowAssociate(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600">Cancelar</button>
-                <button type="submit" disabled={associating || availableUsers.length === 0} className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-70" style={{ backgroundColor: PRIMARY }}>Asociar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <SelectEntityDialog
+        open={showAssociate}
+        onClose={() => setShowAssociate(false)}
+        onSelect={(id) => handleAssociateUser(id)}
+        title="Asociar padre/tutor"
+        entity="user"
+        isAdmin={isAdmin}
+        excludeIds={alreadyLinkedUserIds}
+      />
     </div>
   );
 }

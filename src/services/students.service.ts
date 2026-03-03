@@ -20,6 +20,12 @@ export async function fetchStudents(query: StudentsQuery = {}) {
   return { data: res.data, meta: res.meta };
 }
 
+/** Alumnos asociados al usuario actual (requiere auth). Usar en selector de subida para no-admin. */
+export async function fetchMyStudents(): Promise<StudentDto[]> {
+  const res = await apiFetch<ApiSuccess<StudentDto[]>>('/students/me');
+  return res.data;
+}
+
 export async function fetchStudentById(id: number): Promise<StudentDto> {
   const res = await apiFetch<ApiSuccess<StudentDto>>(`/students/${id}`);
   return res.data;

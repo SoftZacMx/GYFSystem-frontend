@@ -38,9 +38,9 @@ export default function App() {
               <Route path="users" element={<RoleProtectedRoute><UsersPage /></RoleProtectedRoute>} />
               <Route path="users/new" element={<RoleProtectedRoute><UserCreatePage /></RoleProtectedRoute>} />
               <Route path="users/:id" element={<RoleProtectedRoute><UserDetailPage /></RoleProtectedRoute>} />
-              <Route path="students" element={<RoleProtectedRoute><StudentsPage /></RoleProtectedRoute>} />
+              <Route path="students" element={<StudentsPage />} />
               <Route path="students/new" element={<RoleProtectedRoute><StudentCreatePage /></RoleProtectedRoute>} />
-              <Route path="students/:id" element={<RoleProtectedRoute><StudentDetailPage /></RoleProtectedRoute>} />
+              <Route path="students/:id" element={<StudentDetailPage />} />
               <Route path="document-categories" element={<DocumentCategoriesPage />} />
               <Route path="documents" element={<DocumentsPage />} />
               <Route path="events" element={<EventsPage />} />
@@ -51,7 +51,38 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
-        <Toaster position="top-right" richColors />
+        <Toaster
+          position="top-right"
+          theme="light"
+          richColors
+          toastOptions={{
+            style: {
+              background: '#fff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '0.75rem',
+              boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+              color: '#334155',
+            },
+            actionButtonStyle: {
+              background: '#136dec',
+              color: '#fff',
+              borderRadius: '0.5rem',
+              fontWeight: 500,
+            },
+            cancelButtonStyle: {
+              background: 'transparent',
+              color: '#64748b',
+              border: '1px solid #e2e8f0',
+              borderRadius: '0.5rem',
+              fontWeight: 500,
+            },
+            classNames: {
+              success: '!border-l-[#10b981]',
+              error: '!border-l-[#ef4444]',
+              warning: '!border-l-[#f59e0b]',
+            },
+          }}
+        />
       </AuthProvider>
     </ThemeProvider>
   );

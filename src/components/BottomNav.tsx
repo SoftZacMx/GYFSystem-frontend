@@ -5,8 +5,9 @@ import { isStaffRole } from '@/types/auth';
 const allItems = [
   { to: '/', label: 'Inicio', icon: 'home', staffOnly: false },
   { to: '/users', label: 'Usuarios', icon: 'group', staffOnly: true },
-  { to: '/students', label: 'Estudiantes', icon: 'school', staffOnly: true },
+  { to: '/students', label: 'Estudiantes', icon: 'school', staffOnly: false },
   { to: '/documents', label: 'Documentos', icon: 'description', staffOnly: false },
+  { to: '/events', label: 'Eventos', icon: 'event', staffOnly: false },
   { to: '/more', label: 'Más', icon: 'apps', staffOnly: true },
 ];
 

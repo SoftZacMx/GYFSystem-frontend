@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { toast } from 'sonner';
+import { confirmDelete } from '@/lib/confirmDelete';
 import type { DocumentCategoryDto } from '@/types/entities';
 import { ApiError } from '@/types/api';
 import {
@@ -85,13 +86,12 @@ export function DocumentCategoriesPage() {
   };
 
   const handleDelete = (c: DocumentCategoryDto) => {
-    if (!window.confirm('¿Eliminar esta categoría?')) return;
-    deleteDocumentCategory(c.id)
-      .then(() => {
-        toast.success('Categoría eliminada');
-        load();
-      })
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al eliminar'));
+    confirmDelete({
+      message: '¿Eliminar esta categoría?',
+      execute: () => deleteDocumentCategory(c.id).then(load),
+      successMessage: 'Categoría eliminada',
+      errorMessage: 'Error al eliminar',
+    });
   };
 
   return (

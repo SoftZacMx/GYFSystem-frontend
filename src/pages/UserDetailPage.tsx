@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { confirmDelete } from '@/lib/confirmDelete';
 import type { UserDto, CatalogItem, StudentOfParentDto } from '@/types/entities';
 import { ApiError } from '@/types/api';
 import { fetchUserById, updateUser, deleteUser } from '@/services/users.service';
 import { fetchUserTypes, fetchRoles } from '@/services/catalogs.service';
 import { fetchStudentsByUserId, associateParentStudent } from '@/services/parent-students.service';
-import { fetchStudents } from '@/services/students.service';
+import { SelectEntityDialog } from '@/components/SelectEntityDialog';
 
 const PRIMARY = '#136dec';
 
@@ -16,7 +17,6 @@ export function UserDetailPage() {
   const userId = id != null ? parseInt(id, 10) : NaN;
   const [user, setUser] = useState<UserDto | null>(null);
   const [students, setStudents] = useState<StudentOfParentDto[]>([]);
-  const [allStudents, setAllStudents] = useState<{ id: number; fullName: string }[]>([]);
   const [userTypes, setUserTypes] = useState<CatalogItem[]>([]);
   const [roles, setRoles] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,6 @@ export function UserDetailPage() {
   const [status, setStatus] = useState('active');
   const [saving, setSaving] = useState(false);
   const [showAssociate, setShowAssociate] = useState(false);
-  const [associateStudentId, setAssociateStudentId] = useState<number | ''>('');
   const [associating, setAssociating] = useState(false);
 
   useEffect(() => {
@@ -55,10 +54,6 @@ export function UserDetailPage() {
       .finally(() => setLoading(false));
   }, [userId, navigate]);
 
-  useEffect(() => {
-    fetchStudents({ limit: 100 }).then((r) => setAllStudents(r.data)).catch(() => {});
-  }, []);
-
   const userTypeName = userTypes.find((t) => t.id === user?.userTypeId)?.name ?? '';
   const roleName = roles.find((r) => r.id === user?.roleId)?.name ?? '';
 
@@ -83,24 +78,21 @@ export function UserDetailPage() {
   };
 
   const handleDelete = () => {
-    if (Number.isNaN(userId) || !window.confirm('¿Eliminar este usuario?')) return;
-    deleteUser(userId)
-      .then(() => {
-        toast.success('Usuario eliminado');
-        navigate('/users');
-      })
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al eliminar'));
+    if (Number.isNaN(userId)) return;
+    confirmDelete({
+      message: '¿Eliminar este usuario?',
+      execute: () => deleteUser(userId).then(() => navigate('/users')),
+      successMessage: 'Usuario eliminado',
+      errorMessage: 'Error al eliminar',
+    });
   };
 
-  const handleAssociate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (associateStudentId === '') return;
+  const handleAssociateStudent = (studentId: number) => {
     setAssociating(true);
-    associateParentStudent({ userId, studentId: associateStudentId })
+    associateParentStudent({ userId, studentId })
       .then(() => {
         toast.success('Estudiante asociado');
         setShowAssociate(false);
-        setAssociateStudentId('');
         fetchStudentsByUserId(userId).then(setStudents);
       })
       .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al asociar'))
@@ -115,8 +107,7 @@ export function UserDetailPage() {
     );
   }
 
-  const alreadyLinked = students.map((s) => s.studentId);
-  const availableStudents = allStudents.filter((s) => !alreadyLinked.includes(s.id));
+  const alreadyLinkedStudentIds = students.map((s) => s.studentId);
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-8">
@@ -237,24 +228,15 @@ export function UserDetailPage() {
         </ul>
       </section>
 
-      {showAssociate && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAssociate(false)}>
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-4 text-lg font-bold text-slate-800">Asociar estudiante</h3>
-            <form onSubmit={handleAssociate}>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Estudiante</label>
-              <select value={associateStudentId === '' ? '' : associateStudentId} onChange={(e) => setAssociateStudentId(e.target.value === '' ? '' : Number(e.target.value))} className="mb-4 w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required>
-                <option value="">Seleccionar</option>
-                {availableStudents.map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
-              </select>
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowAssociate(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600">Cancelar</button>
-                <button type="submit" disabled={associating || availableStudents.length === 0} className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-70" style={{ backgroundColor: PRIMARY }}>Asociar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <SelectEntityDialog
+        open={showAssociate}
+        onClose={() => setShowAssociate(false)}
+        onSelect={(id) => handleAssociateStudent(id)}
+        title="Asociar estudiante"
+        entity="student"
+        isAdmin={true}
+        excludeIds={alreadyLinkedStudentIds}
+      />
     </div>
   );
 }

@@ -2,59 +2,38 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { isStaffRole } from '@/types/auth';
-import { fetchStudents } from '@/services/students.service';
-import { fetchUsers } from '@/services/users.service';
-import { fetchEvents } from '@/services/events.service';
-import { fetchDocuments } from '@/services/documents.service';
+import { fetchDashboard } from '@/services/dashboard.service';
+import { fetchMyStudents } from '@/services/students.service';
 import { StatCard } from '@/components/StatCard';
 
 const PRIMARY = '#136dec';
 
-function fileNameFromUrl(url: string): string {
-  try {
-    const segment = url.split('/').filter(Boolean).pop();
-    return segment ? decodeURIComponent(segment) : 'Documento';
-  } catch {
-    return 'Documento';
-  }
-}
-
 export function DashboardPage() {
   const { user } = useAuth();
   const staff = user ? isStaffRole(user.roleId) : false;
+  const isAdmin = user?.roleId === 1;
   const [stats, setStats] = useState({ students: 0, users: 0, events: 0 });
   const [recentDocs, setRecentDocs] = useState<{ id: number; name: string }[]>([]);
+  const [chartData, setChartData] = useState<{ grade: string; totalStudents: number; studentsWithAllCategories: number }[]>([]);
+  const [myStudents, setMyStudents] = useState<{ id: number; fullName: string; grade?: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMyStudents, setLoadingMyStudents] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const basePromises = [
-      fetchEvents({ page: 1, limit: 1 }),
-      fetchDocuments({ page: 1, limit: 5, order: 'desc' }),
-    ];
-    const promises = staff
-      ? [fetchStudents({ page: 1, limit: 1 }), fetchUsers({ page: 1, limit: 1 }), ...basePromises]
-      : basePromises;
-    Promise.all(promises)
-      .then((results) => {
+    fetchDashboard()
+      .then((data) => {
         if (cancelled) return;
-        const eventsRes = results[staff ? 2 : 0] as { data: unknown[]; meta?: { total?: number } };
-        const docsRes = results[staff ? 3 : 1] as { data: { id: number; fileUrl: string }[] };
-        setStats({
-          students: staff ? (results[0] as { meta?: { total?: number }; data?: unknown[] }).meta?.total ?? (results[0] as { data?: unknown[] }).data?.length ?? 0 : 0,
-          users: staff ? (results[1] as { meta?: { total?: number }; data?: unknown[] }).meta?.total ?? (results[1] as { data?: unknown[] }).data?.length ?? 0 : 0,
-          events: eventsRes.meta?.total ?? eventsRes.data?.length ?? 0,
-        });
-        setRecentDocs(
-          (docsRes.data ?? []).map((doc) => ({
-            id: doc.id,
-            name: fileNameFromUrl(doc.fileUrl),
-          }))
-        );
+        setStats(data.stats);
+        setRecentDocs(data.recentDocs);
+        setChartData(data.chartData);
       })
       .catch(() => {
-        if (!cancelled) setRecentDocs([]);
+        if (!cancelled) {
+          setRecentDocs([]);
+          setChartData([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -62,9 +41,30 @@ export function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [staff]);
+  }, []);
 
-  const chartData = [40, 75, 60, 85, 50];
+  useEffect(() => {
+    if (!user || isAdmin) return;
+    let cancelled = false;
+    setLoadingMyStudents(true);
+    fetchMyStudents()
+      .then((list) => {
+        if (cancelled) return;
+        setMyStudents(list.map((s) => ({ id: s.id, fullName: s.fullName, grade: s.grade })));
+      })
+      .catch(() => {
+        if (!cancelled) setMyStudents([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMyStudents(false);
+      });
+    return () => { cancelled = true; };
+  }, [user, isAdmin]);
+
+  const chartMax = useMemo(() => {
+    if (chartData.length === 0) return 1;
+    return Math.max(...chartData.map((d) => d.studentsWithAllCategories), 1);
+  }, [chartData]);
 
   const statCards = useMemo(() => {
     const cards: Array<{
@@ -108,7 +108,7 @@ export function DashboardPage() {
           Gestiona documentos y registros escolares
         </p>
 
-        <div className={`mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 ${staff ? 'lg:grid-cols-4' : 'lg:grid-cols-1'}`}>
+        <div className={`mt-8 grid gap-4 ${staff ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 lg:grid-cols-2'}`}>
           {statCards.map((card) => (
             <StatCard
               key={card.label}
@@ -119,6 +119,41 @@ export function DashboardPage() {
               config={card.config}
             />
           ))}
+          {!isAdmin && (
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:min-h-0">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-slate-800">Alumnos asignados</h2>
+                <Link to="/students" className="text-sm font-medium" style={{ color: PRIMARY }}>
+                  Ver todos
+                </Link>
+              </div>
+              <ul className="mt-4 max-h-56 space-y-2 overflow-y-auto">
+                {loadingMyStudents ? (
+                  <li className="py-4 text-center text-sm text-slate-500">Cargando...</li>
+                ) : myStudents.length === 0 ? (
+                  <li className="py-4 text-center text-sm text-slate-500">No tienes alumnos asignados</li>
+                ) : (
+                  myStudents.map((s) => (
+                    <li key={s.id}>
+                      <Link
+                        to={`/students/${s.id}`}
+                        className="flex items-center gap-3 rounded-lg border border-slate-100 py-2.5 px-3 transition hover:bg-slate-50"
+                      >
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600 font-semibold">
+                          {s.fullName.trim().slice(0, 1).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-slate-800">{s.fullName}</p>
+                          {s.grade && <p className="text-xs text-slate-500">{s.grade}</p>}
+                        </div>
+                        <span className="material-symbols-outlined text-slate-400 text-xl">chevron_right</span>
+                      </Link>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
+          )}
         </div>
 
         <section className="mt-8">
@@ -151,53 +186,68 @@ export function DashboardPage() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800">Estado de verificación</h2>
-            <span className="text-sm text-slate-500">Esta semana</span>
-          </div>
-          <div className="mt-6 flex items-end justify-between gap-2">
-            {['Lun', 'Mar', 'Mié', 'Jue', 'Vie'].map((day, i) => (
-              <div key={day} className="flex flex-1 flex-col items-center gap-1">
-                <div
-                  className="w-full max-w-[48px] rounded-t transition"
-                  style={{
-                    height: chartData[i] ? `${chartData[i]}%` : '20%',
-                    minHeight: 24,
-                    backgroundColor: i % 2 === 0 ? '#93c5fd' : PRIMARY,
-                  }}
-                />
-                <span className="text-xs text-slate-500">{day}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+        {isAdmin && (
+          <section className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-800">Alumnos con todos los documentos por grupo</h2>
+              <span className="text-sm text-slate-500">Por categoría</span>
+            </div>
+            <div className="mt-6 flex items-end justify-between gap-2">
+              {loading ? (
+                <p className="py-4 text-center text-sm text-slate-500 w-full">Cargando...</p>
+              ) : chartData.length === 0 ? (
+                <p className="py-4 text-center text-sm text-slate-500 w-full">No hay datos por grupo</p>
+              ) : (
+                chartData.map((d, i) => (
+                  <div key={d.grade} className="flex flex-1 flex-col items-center gap-1 min-w-0">
+                    <div
+                      className="w-full max-w-[48px] rounded-t transition"
+                      style={{
+                        height: `${(d.studentsWithAllCategories / chartMax) * 100}%`,
+                        minHeight: d.studentsWithAllCategories > 0 ? 24 : 4,
+                        backgroundColor: i % 2 === 0 ? '#93c5fd' : PRIMARY,
+                      }}
+                    />
+                    <span className="text-xs text-slate-500 truncate w-full text-center" title={d.grade}>
+                      {d.grade}
+                    </span>
+                    <span className="text-xs font-medium text-slate-600">
+                      {d.studentsWithAllCategories}/{d.totalStudents}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        )}
 
-        <section className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800">Subidas recientes</h2>
-            <Link to="/documents" className="text-sm font-medium" style={{ color: PRIMARY }}>
-              Ver todo
-            </Link>
-          </div>
-          <ul className="mt-4 max-h-48 space-y-2 overflow-y-auto">
-            {loading ? (
-              <li className="text-sm text-slate-500">Cargando...</li>
-            ) : recentDocs.length === 0 ? (
-              <li className="text-sm text-slate-500">No hay subidas recientes</li>
-            ) : (
-              recentDocs.map((doc) => (
-                <li
-                  key={doc.id}
-                  className="flex items-center gap-3 rounded-lg border border-slate-100 py-2 px-3"
-                >
-                  <span className="material-symbols-outlined text-2xl text-amber-500">description</span>
-                  <span className="truncate text-sm font-medium text-slate-800">{doc.name}</span>
-                </li>
-              ))
-            )}
-          </ul>
-        </section>
+        {isAdmin && (
+          <section className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-800">Subidas recientes</h2>
+              <Link to="/documents" className="text-sm font-medium" style={{ color: PRIMARY }}>
+                Ver todo
+              </Link>
+            </div>
+            <ul className="mt-4 max-h-48 space-y-2 overflow-y-auto">
+              {loading ? (
+                <li className="text-sm text-slate-500">Cargando...</li>
+              ) : recentDocs.length === 0 ? (
+                <li className="text-sm text-slate-500">No hay subidas recientes</li>
+              ) : (
+                recentDocs.map((doc) => (
+                  <li
+                    key={doc.id}
+                    className="flex items-center gap-3 rounded-lg border border-slate-100 py-2 px-3"
+                  >
+                    <span className="material-symbols-outlined text-2xl text-amber-500">description</span>
+                    <span className="truncate text-sm font-medium text-slate-800">{doc.name}</span>
+                  </li>
+                ))
+              )}
+            </ul>
+          </section>
+        )}
       </div>
     </div>
   );

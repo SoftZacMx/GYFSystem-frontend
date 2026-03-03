@@ -1,23 +1,25 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { confirmDelete } from '@/lib/confirmDelete';
 import type { DocumentDto, DocumentCategoryDto, StudentDto } from '@/types/entities';
 import { ApiError } from '@/types/api';
-import { fetchDocuments, uploadDocument, deleteDocument, downloadDocument } from '@/services/documents.service';
+import {
+  fetchDocuments,
+  fetchDocumentsGroupedByMyStudents,
+  uploadDocument,
+  deleteDocument,
+  downloadDocument,
+} from '@/services/documents.service';
+import type { DocumentsGroupedByStudent } from '@/services/documents.service';
 import { fetchDocumentCategories } from '@/services/document-categories.service';
 import { fetchStudents, fetchStudentById } from '@/services/students.service';
-import { FilterPills } from '@/components/ListScreenLayout';
+import { useAuth } from '@/contexts/AuthContext';
+import { SelectEntityDialog } from '@/components/SelectEntityDialog';
+import { DocumentCard } from '@/components/DocumentCard';
+import { StudentDocumentsSection } from '@/components/StudentDocumentsSection';
 
 const PRIMARY = '#136dec';
-const GRADE_COLORS: Record<string, string> = {
-  '1': 'bg-blue-100 text-blue-800',
-  '2': 'bg-emerald-100 text-emerald-800',
-  '3': 'bg-amber-100 text-amber-800',
-  '4': 'bg-violet-100 text-violet-800',
-  '5': 'bg-rose-100 text-rose-800',
-  '6': 'bg-cyan-100 text-cyan-800',
-};
-const defaultGradeStyle = 'bg-slate-100 text-slate-700';
 const MAX_SIZE_MB = 10;
 const ACCEPT = '.pdf,.jpg,.jpeg,.png';
 
@@ -31,6 +33,8 @@ function fileNameFromUrl(url: string): string {
 }
 
 export function DocumentsPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.roleId === 1;
   const [searchParams] = useSearchParams();
   const studentIdParam = searchParams.get('studentId');
   const studentIdFromUrl = studentIdParam ? parseInt(studentIdParam, 10) : null;
@@ -38,6 +42,7 @@ export function DocumentsPage() {
 
   const [student, setStudent] = useState<StudentDto | null>(null);
   const [documents, setDocuments] = useState<DocumentDto[]>([]);
+  const [groupedByStudent, setGroupedByStudent] = useState<DocumentsGroupedByStudent[]>([]);
   const [categories, setCategories] = useState<DocumentCategoryDto[]>([]);
   const [students, setStudents] = useState<StudentDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,39 +52,26 @@ export function DocumentsPage() {
   const [uploading, setUploading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [showStudentDialog, setShowStudentDialog] = useState(false);
-  const [studentSearch, setStudentSearch] = useState('');
-  const [studentGradeFilter, setStudentGradeFilter] = useState<string | 'all'>('all');
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [selectedStudentName, setSelectedStudentName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const grades = useMemo(() => {
-    const set = new Set(students.map((s) => s.grade).filter(Boolean));
-    return Array.from(set).sort().map((g) => ({ id: g, label: g }));
-  }, [students]);
-
-  const filteredStudents = useMemo(() => {
-    let list = students;
-    if (studentSearch.trim()) {
-      const q = studentSearch.trim().toLowerCase();
-      list = list.filter((s) => s.fullName.toLowerCase().includes(q) || s.curp?.toLowerCase().includes(q));
-    }
-    if (studentGradeFilter !== 'all') list = list.filter((s) => s.grade === studentGradeFilter);
-    return list;
-  }, [students, studentSearch, studentGradeFilter]);
-
-  const getGradeStyle = (g: string) => {
-    const num = g.replace(/\D/g, '').slice(0, 1);
-    return GRADE_COLORS[num] ?? defaultGradeStyle;
-  };
 
   useEffect(() => {
     setUploadStudentId(validStudentId ?? '');
+    if (!validStudentId) setSelectedStudentName(null);
   }, [validStudentId]);
 
   useEffect(() => {
     if (validStudentId) {
       fetchStudentById(validStudentId)
-        .then(setStudent)
-        .catch(() => setStudent(null));
+        .then((s) => {
+          setStudent(s);
+          setSelectedStudentName(s.fullName);
+        })
+        .catch(() => {
+          setStudent(null);
+          setSelectedStudentName(null);
+        });
     } else {
       setStudent(null);
     }
@@ -95,22 +87,35 @@ export function DocumentsPage() {
       .finally(() => setLoading(false));
   };
 
+  const loadGroupedByMyStudents = () => {
+    setLoading(true);
+    fetchDocumentsGroupedByMyStudents()
+      .then(setGroupedByStudent)
+      .catch((err) => {
+        toast.error(err instanceof ApiError ? err.message : 'Error al cargar');
+        setGroupedByStudent([]);
+      })
+      .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
-    loadDocuments();
-  }, [validStudentId]);
+    if (isAdmin) loadDocuments();
+    else loadGroupedByMyStudents();
+  }, [isAdmin, validStudentId]);
 
   useEffect(() => {
     fetchDocumentCategories().then(setCategories).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!validStudentId || showStudentDialog) {
+    if (isAdmin) {
       fetchStudents({ page: 1, limit: 100 }).then((r) => setStudents(r.data)).catch(() => {});
     }
-  }, [validStudentId, showStudentDialog]);
+  }, [isAdmin]);
 
   const getCategoryName = (id: number) => categories.find((c) => c.id === id)?.name ?? 'Documento';
-  const getStudentName = (id: number) => students.find((s) => s.id === id)?.fullName ?? 'Estudiante #' + id;
+  const getStudentName = (id: number) =>
+    selectedStudentName && uploadStudentId === id ? selectedStudentName : students.find((s) => s.id === id)?.fullName ?? 'Estudiante #' + id;
 
   const handleSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -136,7 +141,8 @@ export function DocumentsPage() {
         toast.success('Documento subido');
         setUploadFile(null);
         setUploadCategoryId('');
-        loadDocuments();
+        if (isAdmin) loadDocuments();
+        else loadGroupedByMyStudents();
       })
       .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al subir'))
       .finally(() => setUploading(false));
@@ -150,13 +156,16 @@ export function DocumentsPage() {
   };
 
   const handleDelete = (d: DocumentDto) => {
-    if (!window.confirm('¿Eliminar este documento?')) return;
-    deleteDocument(d.id)
-      .then(() => {
-        toast.success('Documento eliminado');
-        loadDocuments();
-      })
-      .catch((err) => toast.error(err instanceof ApiError ? err.message : 'Error al eliminar'));
+    confirmDelete({
+      message: '¿Eliminar este documento?',
+      execute: () =>
+        deleteDocument(d.id).then(() => {
+          if (isAdmin) loadDocuments();
+          else loadGroupedByMyStudents();
+        }),
+      successMessage: 'Documento eliminado',
+      errorMessage: 'Error al eliminar',
+    });
   };
 
   return (
@@ -214,7 +223,7 @@ export function DocumentsPage() {
                   >
                     {uploadStudentId !== '' ? (
                       <span className="flex items-center justify-between gap-2">
-                        {getStudentName(uploadStudentId)}
+                        {selectedStudentName ?? getStudentName(uploadStudentId)}
                         <span className="material-symbols-outlined text-slate-400 text-xl">expand_more</span>
                       </span>
                     ) : (
@@ -227,7 +236,7 @@ export function DocumentsPage() {
                   {uploadStudentId !== '' && (
                     <button
                       type="button"
-                      onClick={() => setUploadStudentId('')}
+                      onClick={() => { setUploadStudentId(''); setSelectedStudentName(null); }}
                       className="mt-1 text-xs font-medium text-slate-500 hover:text-slate-700"
                     >
                       Cambiar alumno
@@ -237,17 +246,32 @@ export function DocumentsPage() {
               )}
               <div>
                 <label className="mb-1 block text-left text-sm font-medium text-slate-700">Categoría</label>
-                <select
-                  value={uploadCategoryId === '' ? '' : uploadCategoryId}
-                  onChange={(e) => setUploadCategoryId(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800"
-                  required
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryDialog(true)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-slate-800 transition hover:bg-slate-50 focus:outline-0 focus:ring-2 focus:ring-[#136dec]/30"
                 >
-                  <option value="">Seleccionar</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                  {uploadCategoryId !== '' ? (
+                    <span className="flex items-center justify-between gap-2">
+                      {getCategoryName(uploadCategoryId)}
+                      <span className="material-symbols-outlined text-slate-400 text-xl">expand_more</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-between gap-2 text-slate-500">
+                      Seleccionar categoría
+                      <span className="material-symbols-outlined text-xl">folder</span>
+                    </span>
+                  )}
+                </button>
+                {uploadCategoryId !== '' && (
+                  <button
+                    type="button"
+                    onClick={() => setUploadCategoryId('')}
+                    className="mt-1 text-xs font-medium text-slate-500 hover:text-slate-700"
+                  >
+                    Cambiar categoría
+                  </button>
+                )}
               </div>
               <button
                 type="submit"
@@ -265,138 +289,115 @@ export function DocumentsPage() {
         {/* Archivos cargados — derecha en desktop, abajo en móvil */}
         <section>
         <h2 className="text-lg font-bold text-slate-800">
-          {validStudentId ? 'Documentos del alumno' : 'Documentos recientes'}
+          {isAdmin
+            ? (validStudentId ? 'Documentos del alumno' : 'Documentos recientes')
+            : 'Documentos de mis alumnos'}
         </h2>
         {loading ? (
           <p className="py-6 text-center text-sm text-slate-500">Cargando...</p>
-        ) : documents.length === 0 ? (
+        ) : isAdmin ? (
+          documents.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-500">No hay documentos</p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {documents.map((d) => (
+                <DocumentCard
+                  key={d.id}
+                  document={d}
+                  categoryName={getCategoryName(d.categoryId)}
+                  subtitle={`Subido ${new Date(d.uploadedAt).toLocaleDateString('es')}${!validStudentId ? ` · ${getStudentName(d.studentId)}` : ''}`}
+                  onDownload={handleDownload}
+                  onDelete={handleDelete}
+                  downloadingId={downloadingId}
+                />
+              ))}
+            </ul>
+          )
+        ) : groupedByStudent.length === 0 ? (
           <p className="py-6 text-center text-sm text-slate-500">No hay documentos</p>
         ) : (
-          <ul className="mt-3 space-y-3">
-            {documents.map((d) => (
-              <li
-                key={d.id}
-                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
-              >
-                <span className="material-symbols-outlined text-2xl text-amber-500">description</span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-slate-800">{getCategoryName(d.categoryId)}</p>
-                  <p className="text-xs text-slate-500">
-                    Subido {new Date(d.uploadedAt).toLocaleDateString('es')}
-                    {!validStudentId && ` · ${getStudentName(d.studentId)}`}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDownload(d)}
-                      disabled={downloadingId === d.id}
-                      className="flex size-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-60"
-                      title="Descargar"
-                      aria-label="Descargar"
-                    >
-                      <span className="material-symbols-outlined text-xl">
-                        {downloadingId === d.id ? 'hourglass_empty' : 'download'}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(d)}
-                      className="flex size-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50"
-                      title="Eliminar"
-                      aria-label="Eliminar"
-                    >
-                      <span className="material-symbols-outlined text-xl">delete</span>
-                    </button>
-                  </div>
-                </div>
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${d.verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}
-                >
-                  {d.verified ? 'Archivo verificado' : 'Pendiente'}
-                </span>
-              </li>
+          <div className="mt-3 space-y-6">
+            {groupedByStudent.map((group) => (
+              <StudentDocumentsSection
+                key={group.student.studentId}
+                student={{
+                  fullName: group.student.fullName,
+                  curp: group.student.curp,
+                  grade: group.student.grade,
+                }}
+                documents={group.documents}
+                getCategoryName={getCategoryName}
+                onDownload={handleDownload}
+                onDelete={handleDelete}
+                downloadingId={downloadingId}
+              />
             ))}
-          </ul>
+          </div>
         )}
         </section>
       </div>
 
-      {/* Dialog selección de alumno */}
-      {showStudentDialog && (
+      <SelectEntityDialog
+        open={showStudentDialog}
+        onClose={() => setShowStudentDialog(false)}
+        onSelect={(id, item) => {
+          setUploadStudentId(id);
+          setSelectedStudentName((item as StudentDto).fullName);
+        }}
+        title="Seleccionar alumno"
+        entity="student"
+        isAdmin={isAdmin}
+      />
+
+      {/* Dialog selección de categoría */}
+      {showCategoryDialog && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setShowStudentDialog(false)}
+          onClick={() => setShowCategoryDialog(false)}
         >
           <div
             className="flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl border border-slate-200 bg-white shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-200 p-4">
-              <h3 className="text-lg font-bold text-slate-800">Seleccionar alumno</h3>
+              <h3 className="text-lg font-bold text-slate-800">Seleccionar categoría</h3>
               <button
                 type="button"
-                onClick={() => setShowStudentDialog(false)}
+                onClick={() => setShowCategoryDialog(false)}
                 className="flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
                 aria-label="Cerrar"
               >
                 <span className="material-symbols-outlined text-xl">close</span>
               </button>
             </div>
-            <div className="flex flex-col overflow-hidden p-4">
-              <div className="relative mb-3">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
-                  search
-                </span>
-                <input
-                  type="search"
-                  value={studentSearch}
-                  onChange={(e) => setStudentSearch(e.target.value)}
-                  placeholder="Buscar por nombre o CURP..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-[#136dec]/30"
-                />
-              </div>
-              <div className="mb-3">
-                <FilterPills
-                  options={grades}
-                  activeId={studentGradeFilter === 'all' ? 'all' : studentGradeFilter}
-                  onChange={(id) => setStudentGradeFilter(id === 'all' ? 'all' : id)}
-                  labelAll="Todos los grados"
-                />
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-slate-200">
-                {filteredStudents.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-slate-500">No hay estudiantes</p>
-                ) : (
-                  <ul className="divide-y divide-slate-100">
-                    {filteredStudents.map((s) => (
-                      <li key={s.id}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUploadStudentId(s.id);
-                            setShowStudentDialog(false);
-                            setStudentSearch('');
-                            setStudentGradeFilter('all');
-                          }}
-                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
-                        >
-                          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600 font-semibold">
-                            {s.fullName.slice(0, 1)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-slate-800">{s.fullName}</p>
-                            <p className="text-xs text-slate-500">{s.curp} · {s.grade}</p>
-                          </div>
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${getGradeStyle(s.grade)}`}>
-                            {s.grade}
-                          </span>
-                          <span className="material-symbols-outlined text-slate-400 text-xl">chevron_right</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              {categories.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-500">No hay categorías</p>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {categories.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadCategoryId(c.id);
+                          setShowCategoryDialog(false);
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                      >
+                        <span className="material-symbols-outlined text-slate-500 text-xl">folder</span>
+                        <div className="min-w-0 flex-1 text-left">
+                          <p className="font-medium text-slate-800">{c.name}</p>
+                          {c.description && (
+                            <p className="text-xs text-slate-500">{c.description}</p>
+                          )}
+                        </div>
+                        <span className="material-symbols-outlined text-slate-400 text-xl">chevron_right</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>

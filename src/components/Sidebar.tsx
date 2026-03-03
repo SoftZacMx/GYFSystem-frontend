@@ -9,10 +9,10 @@ import { fetchMyNotifications } from '@/services/notifications.service';
 const navItems: { to: string; label: string; icon: string; staffOnly: boolean }[] = [
   { to: '/', label: 'Inicio', icon: 'home', staffOnly: false },
   { to: '/users', label: 'Usuarios', icon: 'group', staffOnly: true },
-  { to: '/students', label: 'Estudiantes', icon: 'school', staffOnly: true },
+  { to: '/students', label: 'Estudiantes', icon: 'school', staffOnly: false },
   { to: '/documents', label: 'Documentos', icon: 'description', staffOnly: false },
   { to: '/document-categories', label: 'Categorías de documentos', icon: 'folder', staffOnly: true },
-  { to: '/events', label: 'Eventos', icon: 'event', staffOnly: true },
+  { to: '/events', label: 'Eventos', icon: 'event', staffOnly: false },
   { to: '/company', label: 'Empresa', icon: 'business', staffOnly: true },
 ];
 

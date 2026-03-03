@@ -27,6 +27,11 @@ export interface UpdateUserBody {
   status?: string;
 }
 
+export interface StudentFileItem {
+  category: string;
+  isUpload: boolean;
+}
+
 export interface StudentDto {
   id: number;
   fullName: string;
@@ -34,6 +39,9 @@ export interface StudentDto {
   grade: string;
   status: string;
   createdAt: string;
+  files: StudentFileItem[];
+  totalUploadFiles: number;
+  totalPendingFiles: number;
 }
 
 export interface CreateStudentBody {
