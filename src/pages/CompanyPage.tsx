@@ -90,6 +90,7 @@ export function CompanyPage() {
       address: address.trim() || null,
       logoUrl: logoUrl.trim() || null,
       timezone: timezone.trim() || null,
+      themeConfig: { primaryColor, accentColor },
     };
     const promise = isCreate ? createCompany(body) : updateCompany(company!.id, body);
     promise

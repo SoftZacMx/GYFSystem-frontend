@@ -4,7 +4,9 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { RoleProtectedRoute } from '@/components/RoleProtectedRoute';
+import { AdminProtectedRoute } from '@/components/AdminProtectedRoute';
 import { Layout } from '@/components/Layout';
+import { ThemeFromCompanyLoader } from '@/components/ThemeFromCompanyLoader';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
@@ -36,6 +38,7 @@ export default function App() {
               path="/"
               element={
                 <ProtectedRoute>
+                  <ThemeFromCompanyLoader />
                   <Layout />
                 </ProtectedRoute>
               }
@@ -47,11 +50,11 @@ export default function App() {
               <Route path="students" element={<StudentsPage />} />
               <Route path="students/new" element={<RoleProtectedRoute><StudentCreatePage /></RoleProtectedRoute>} />
               <Route path="students/:id" element={<StudentDetailPage />} />
-              <Route path="document-categories" element={<DocumentCategoriesPage />} />
+              <Route path="document-categories" element={<AdminProtectedRoute><DocumentCategoriesPage /></AdminProtectedRoute>} />
               <Route path="documents" element={<DocumentsPage />} />
               <Route path="events" element={<EventsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="company" element={<CompanyPage />} />
+              <Route path="company" element={<AdminProtectedRoute><CompanyPage /></AdminProtectedRoute>} />
               <Route path="more" element={<Navigate to="/" replace />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
