@@ -88,7 +88,11 @@ export function DocumentCategoriesPage() {
   const handleDelete = (c: DocumentCategoryDto) => {
     confirmDelete({
       message: '¿Eliminar esta categoría?',
-      execute: () => deleteDocumentCategory(c.id).then(load),
+      execute: () =>
+        deleteDocumentCategory(c.id).then(() => {
+          load();
+          setShowModal(false);
+        }),
       successMessage: 'Categoría eliminada',
       errorMessage: 'Error al eliminar',
     });
@@ -143,15 +147,15 @@ export function DocumentCategoriesPage() {
             <h3 className="mb-4 text-lg font-bold text-slate-800">{editingId == null ? 'Nueva categoría' : 'Editar categoría'}</h3>
             <form onSubmit={handleSubmit}>
               <label className="mb-2 block text-sm font-medium text-slate-700">Nombre</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800" required />
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="mb-4 w-full rounded-xl border border-input bg-white px-3 py-2 text-slate-800" required />
               <label className="mb-2 block text-sm font-medium text-slate-700">Descripción</label>
-              <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="mb-6 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800" />
+              <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="mb-6 w-full rounded-xl border border-input bg-white px-3 py-2 text-slate-800" />
               <div className="flex justify-end gap-2">
                 {editingId != null && (
                   <button type="button" onClick={() => { const c = list.find((x) => x.id === editingId); if (c) handleDelete(c); }} className="rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600">Eliminar</button>
                 )}
                 <button type="button" onClick={() => setShowModal(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600">Cancelar</button>
-                <button type="submit" disabled={saving} className="rounded-xl bg-[#136dec] px-4 py-2 text-sm font-medium text-white disabled:opacity-70">Guardar</button>
+                <button type="submit" disabled={saving} className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-70">Guardar</button>
               </div>
             </form>
           </div>

@@ -166,9 +166,18 @@ export function StudentsPage() {
                 }
                 meta={
                   <>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-base">badge</span>
                       {s.curp}
+                      {s.status?.toLowerCase() === 'active' || s.status?.toLowerCase() === 'activo' ? (
+                        <span className="flex size-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600" title="Activo">
+                          <span className="material-symbols-outlined text-sm">check_circle</span>
+                        </span>
+                      ) : (
+                        <span className="flex size-5 items-center justify-center rounded-full bg-slate-200 text-slate-500" title="Inactivo">
+                          <span className="material-symbols-outlined text-sm">cancel</span>
+                        </span>
+                      )}
                     </span>
                     {s.totalUploadFiles != null && s.totalPendingFiles != null && (
                       <span className="flex items-center gap-1.5">
@@ -202,7 +211,7 @@ export function StudentsPage() {
                         e.stopPropagation();
                         navigate(`/documents?studentId=${s.id}`);
                       }}
-                      className="flex items-center gap-1 font-medium text-[#136dec] hover:underline"
+                      className="flex items-center gap-1 font-medium text-primary hover:underline"
                     >
                       <span className="material-symbols-outlined text-base">upload_file</span>
                       Subir documento

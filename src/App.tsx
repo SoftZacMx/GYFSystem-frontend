@@ -6,6 +6,9 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { RoleProtectedRoute } from '@/components/RoleProtectedRoute';
 import { Layout } from '@/components/Layout';
 import { LoginPage } from '@/pages/LoginPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
+import { VerifyAccountPage } from '@/pages/VerifyAccountPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { UsersPage } from '@/pages/UsersPage';
 import { StudentsPage } from '@/pages/StudentsPage';
@@ -26,6 +29,9 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/auth/account/verify" element={<VerifyAccountPage />} />
             <Route
               path="/"
               element={
@@ -64,8 +70,8 @@ export default function App() {
               color: '#334155',
             },
             actionButtonStyle: {
-              background: '#136dec',
-              color: '#fff',
+              background: 'hsl(var(--primary))',
+              color: 'hsl(var(--primary-foreground))',
               borderRadius: '0.5rem',
               fontWeight: 500,
             },

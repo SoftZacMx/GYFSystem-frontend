@@ -98,7 +98,7 @@ export function Sidebar({
                   'flex items-center rounded-lg py-2.5 text-sm font-medium transition ' +
                   (isNarrow ? 'justify-center px-0' : 'gap-3 px-3') +
                   (isActive
-                    ? ' bg-[#136dec]/10 text-[#136dec]'
+                    ? ' bg-primary/10 text-primary'
                     : ' text-slate-600 hover:bg-slate-100 hover:text-slate-800')
                 }
               >

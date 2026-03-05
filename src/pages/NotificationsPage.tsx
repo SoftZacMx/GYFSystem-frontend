@@ -4,8 +4,6 @@ import type { NotificationDto } from '@/types/entities';
 import { ApiError } from '@/types/api';
 import { fetchMyNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '@/services/notifications.service';
 
-const APP_PRIMARY = '#136dec';
-const APP_BG = '#f6f7f8';
 
 type TabId = 'all' | 'unread' | 'admin';
 
@@ -19,8 +17,8 @@ const TYPE_TITLES: Record<string, string> = {
 
 function getNotificationIcon(type: string): { icon: string; bg: string; color: string } {
   const t = type.toLowerCase();
-  if (t === 'document') return { icon: 'upload_file', bg: 'bg-[#136dec]', color: 'text-white' };
-  if (t === 'event') return { icon: 'event', bg: 'bg-amber-500', color: 'text-white' };
+  if (t === 'document') return { icon: 'upload_file', bg: 'bg-primary', color: 'text-primary-foreground' };
+  if (t === 'event') return { icon: 'event', bg: 'bg-accent', color: 'text-accent-foreground' };
   if (t === 'warning') return { icon: 'warning', bg: 'bg-amber-500', color: 'text-white' };
   return { icon: 'campaign', bg: 'bg-slate-400', color: 'text-white' };
 }
@@ -123,7 +121,7 @@ export function NotificationsPage() {
   const unreadCount = list.filter((n) => !n.isRead).length;
 
   return (
-    <div className="min-h-full font-display" style={{ backgroundColor: APP_BG }}>
+    <div className="min-h-full bg-muted font-display">
       {/* Header: centrado título + Mark all derecha */}
       <header className="relative flex items-center justify-center px-4 pt-4 pb-3">
         <h1 className="text-xl font-bold tracking-tight text-slate-800">Mis notificaciones</h1>
@@ -133,7 +131,7 @@ export function NotificationsPage() {
             disabled={markingAll}
             onClick={handleMarkAllRead}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium disabled:opacity-70"
-            style={{ color: APP_PRIMARY }}
+            className="text-primary"
           >
             Marcar todas
           </button>
@@ -155,15 +153,12 @@ export function NotificationsPage() {
               type="button"
               onClick={() => setTab(id)}
               className="relative pb-3 pt-2 text-sm font-medium transition"
-              style={{
-                color: tab === id ? APP_PRIMARY : '#64748b',
-              }}
+              className={tab === id ? 'text-primary' : 'text-slate-500'}
             >
               {label}
               {badge != null && badge > 0 && id === 'all' && (
                 <span
-                  className="ml-1.5 rounded-full px-1.5 py-0.5 text-xs font-semibold text-white"
-                  style={{ backgroundColor: APP_PRIMARY }}
+                  className="ml-1.5 rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground"
                 >
                   {badge} NEW
                 </span>
@@ -171,10 +166,10 @@ export function NotificationsPage() {
               {tab === id && (
                 <span
                   className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                  style={{ backgroundColor: APP_PRIMARY }}
-                />
-              )}
-            </button>
+className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary"
+                  />
+                )}
+              </button>
           ))}
         </div>
       </div>
@@ -203,10 +198,7 @@ export function NotificationsPage() {
                         className="relative flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:shadow-md md:gap-4 md:p-4"
                       >
                         {!n.isRead && (
-                          <span
-                            className="absolute left-0 top-0 h-full w-1 rounded-l-xl"
-                            style={{ backgroundColor: APP_PRIMARY }}
-                          />
+                          <span className="absolute left-0 top-0 h-full w-1 rounded-l-xl bg-primary" />
                         )}
                         <div
                           className={`flex size-10 shrink-0 items-center justify-center rounded-lg md:size-12 ${bg} ${color}`}

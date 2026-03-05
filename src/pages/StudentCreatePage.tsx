@@ -4,8 +4,6 @@ import { toast } from 'sonner';
 import { ApiError } from '@/types/api';
 import { createStudent } from '@/services/students.service';
 
-const PRIMARY = '#136dec';
-
 export function StudentCreatePage() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
@@ -51,26 +49,26 @@ export function StudentCreatePage() {
           <form onSubmit={handleCreate} className="mt-4 w-full max-w-sm space-y-3 text-left">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Nombre completo</label>
-              <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required placeholder="Ej. Alex Johnson" />
+              <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required placeholder="Ej. Alex Johnson" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">CURP</label>
-              <input type="text" value={curp} onChange={(e) => setCurp(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required placeholder="Clave única de registro" />
+              <input type="text" value={curp} onChange={(e) => setCurp(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required placeholder="Clave única de registro" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Grado - Sección</label>
-              <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required placeholder="Ej. 10B, 3A" />
+              <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required placeholder="Ej. 10B, 3A" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Estado</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800">
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30">
                 <option value="active">Activo</option>
                 <option value="inactive">Inactivo</option>
               </select>
             </div>
             <div className="flex gap-2 pt-4">
               <button type="button" onClick={() => navigate('/students')} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600">Cancelar</button>
-              <button type="submit" disabled={saving} className="flex-1 rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-70" style={{ backgroundColor: PRIMARY }}>Crear estudiante</button>
+              <button type="submit" disabled={saving} className="flex-1 rounded-xl px-4 py-2 text-sm font-medium bg-primary text-primary-foreground disabled:opacity-70">Crear estudiante</button>
             </div>
           </form>
         </div>

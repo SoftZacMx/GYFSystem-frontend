@@ -172,7 +172,7 @@ export function CompanyPage() {
                         value={logoInput}
                         onChange={(e) => setLogoInput(e.target.value)}
                         placeholder="https://..."
-                        className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 placeholder:text-slate-400"
+                        className="flex-1 rounded-lg border border-input bg-slate-50 px-3 py-2 text-slate-800 placeholder:text-slate-400"
                       />
                       <button
                         type="button"
@@ -185,7 +185,7 @@ export function CompanyPage() {
                       <button
                         type="button"
                         onClick={() => { setShowLogoInput(false); setLogoInput(''); }}
-                        className="rounded-lg border border-slate-200 px-4 py-2 text-slate-600"
+                        className="rounded-lg border border-accent px-4 py-2 text-accent transition hover:bg-accent/10"
                       >
                         Cancelar
                       </button>
@@ -220,7 +220,7 @@ export function CompanyPage() {
                         type="color"
                         value={primaryColor}
                         onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="size-12 cursor-pointer rounded-lg border border-slate-200 bg-transparent p-0"
+                        className="size-12 cursor-pointer rounded-lg border border-input bg-transparent p-0"
                         aria-label="Color primario"
                       />
                       <span className="font-mono text-sm font-medium text-slate-800">{primaryColor}</span>
@@ -235,7 +235,7 @@ export function CompanyPage() {
                         type="color"
                         value={accentColor}
                         onChange={(e) => setAccentColor(e.target.value)}
-                        className="size-12 cursor-pointer rounded-lg border border-slate-200 bg-transparent p-0"
+                        className="size-12 cursor-pointer rounded-lg border border-input bg-transparent p-0"
                         aria-label="Color de acento"
                       />
                       <span className="font-mono text-sm font-medium text-slate-800">{accentColor}</span>
@@ -259,7 +259,7 @@ export function CompanyPage() {
                     onChange={(e) => setName(e.target.value)}
                     required
                     maxLength={MAX_NAME}
-                    className="w-full rounded-xl border-0 bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-[#136DEC] focus:ring-offset-0"
+                    className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
                     placeholder="Ej. Oakwood International Academy"
                   />
                   <p className="mt-1 text-xs text-slate-500">{name.length}/{MAX_NAME}</p>
@@ -274,7 +274,7 @@ export function CompanyPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     maxLength={MAX_EMAIL}
-                    className="w-full rounded-xl border-0 bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-[#136DEC] focus:ring-offset-0"
+                    className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
                   />
                   <p className="mt-1 text-xs text-slate-500">{email.length}/{MAX_EMAIL}</p>
                 </div>
@@ -287,7 +287,7 @@ export function CompanyPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     maxLength={MAX_PHONE}
-                    className="w-full rounded-xl border-0 bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-[#136DEC] focus:ring-offset-0"
+                    className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
                     placeholder="10 dígitos"
                   />
                   <p className="mt-1 text-xs text-slate-500">{phone.length}/{MAX_PHONE}</p>
@@ -299,7 +299,7 @@ export function CompanyPage() {
                   <select
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
-                    className="w-full rounded-xl border-0 bg-slate-100 px-4 py-3 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-[#136DEC] focus:ring-offset-0"
+                    className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
                   >
                     {TIMEZONE_OPTIONS.map((opt) => (
                       <option key={opt.value || 'empty'} value={opt.value}>
@@ -317,7 +317,7 @@ export function CompanyPage() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     maxLength={MAX_ADDRESS}
-                    className="w-full rounded-xl border-0 bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-[#136DEC] focus:ring-offset-0"
+                    className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
                     placeholder="Máx. 60 caracteres"
                   />
                   <p className="mt-1 text-xs text-slate-500">{address.length}/{MAX_ADDRESS}</p>

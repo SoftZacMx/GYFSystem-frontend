@@ -25,7 +25,7 @@ export function BottomNav() {
           end={to === '/'}
           className={({ isActive }) =>
             'flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-medium transition ' +
-            (isActive ? 'text-[#136dec]' : 'text-slate-500 hover:text-slate-700')
+            (isActive ? 'text-primary' : 'text-slate-500 hover:text-slate-700')
           }
         >
           <span className="material-symbols-outlined text-[26px]">{icon}</span>

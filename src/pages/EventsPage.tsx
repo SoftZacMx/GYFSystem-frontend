@@ -6,12 +6,6 @@ import { ApiError } from '@/types/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchEvents, createEvent, updateEvent, deleteEvent } from '@/services/events.service';
 
-const APP_PRIMARY = '#136dec';
-const APP_BG = '#f6f7f8';
-const ACCENT_BLUE = '#136dec';
-const ACCENT_GREEN = '#10b981';
-const ACCENT_ORANGE = '#f59e0b';
-
 const WEEKDAYS = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -41,9 +35,10 @@ function getDaysInMonth(year: number, month: number): (number | null)[] {
   return days;
 }
 
-function getEventBarColor(index: number): string {
-  const colors = [ACCENT_BLUE, ACCENT_GREEN, ACCENT_ORANGE];
-  return colors[index % 3];
+/** Bar color for event cards: primary, accent (tema), then amber */
+function getEventBarColorClass(index: number): string {
+  const classes = ['bg-primary', 'bg-accent', 'bg-amber-500'];
+  return classes[index % 3];
 }
 
 export function EventsPage() {
@@ -135,7 +130,7 @@ export function EventsPage() {
     tab === 'calendar' ? `Eventos del ${selectedDate.getDate()} de ${MONTHS[selectedDate.getMonth()]}` : tab === 'pending' ? 'Eventos pendientes' : 'Todos los eventos';
 
   return (
-    <div className="min-h-full font-display" style={{ backgroundColor: APP_BG }}>
+    <div className="min-h-full bg-muted font-display">
       <div className="border-b border-slate-200 bg-white px-4 pb-3 pt-4">
         <h1 className="text-center text-xl font-bold tracking-tight text-slate-800">Gestión de eventos</h1>
         <div className="mt-3 flex gap-6 border-b border-slate-200">
@@ -150,14 +145,13 @@ export function EventsPage() {
               key={id}
               type="button"
               onClick={() => setTab(id)}
-              className="relative pb-3 pt-1 text-sm font-medium transition"
-              style={{ color: tab === id ? APP_PRIMARY : '#64748b' }}
+              className={`relative pb-3 pt-1 text-sm font-medium transition ${tab === id ? 'text-primary' : 'text-slate-500'}`}
             >
               {label}
               {tab === id && (
                 <span
                   className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                  style={{ backgroundColor: APP_PRIMARY }}
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary"
                 />
               )}
             </button>
@@ -213,17 +207,13 @@ export function EventsPage() {
                   >
                     <span
                       className={`flex size-8 items-center justify-center rounded-full ${
-                        isSelected ? 'text-white' : isToday ? 'font-semibold text-[#136dec]' : 'text-slate-700'
+                        isSelected ? 'bg-primary text-primary-foreground' : isToday ? 'bg-primary/20 font-semibold text-primary' : 'text-slate-700'
                       }`}
-                      style={isSelected ? { backgroundColor: APP_PRIMARY } : isToday ? { backgroundColor: `${APP_PRIMARY}20` } : undefined}
                     >
                       {day}
                     </span>
                     {hasEvents && (
-                      <span
-                        className="size-1.5 rounded-full"
-                        style={{ backgroundColor: APP_PRIMARY }}
-                      />
+                      <span className="size-1.5 rounded-full bg-primary" />
                     )}
                   </button>
                 );
@@ -235,7 +225,7 @@ export function EventsPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold text-slate-800">{displayTitle}</h2>
-            <span className="text-sm font-medium" style={{ color: APP_PRIMARY }}>
+            <span className="text-sm font-medium text-primary">
               {displayEvents.length} activos
             </span>
           </div>
@@ -247,17 +237,17 @@ export function EventsPage() {
           ) : (
             <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 lg:grid-cols-2">
               {displayEvents.map((ev, index) => {
-                const barColor = getEventBarColor(index);
+                const barClass = getEventBarColorClass(index);
                 return (
                   <div
                     key={ev.id}
                     className="flex rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
                   >
-                    <div className="w-1 shrink-0" style={{ backgroundColor: barColor }} />
+                    <div className={`w-1 shrink-0 ${barClass}`} />
                     <div className="min-w-0 flex-1 p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="text-xs font-semibold uppercase" style={{ color: barColor }}>
+                          <p className={`text-xs font-semibold uppercase ${barClass.replace('bg-', 'text-')}`}>
                             {formatEventDate(ev.eventDate)}
                           </p>
                           <h3 className="mt-0.5 font-semibold text-slate-800">{ev.title}</h3>
@@ -295,8 +285,7 @@ export function EventsPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="fixed bottom-20 right-4 flex size-14 items-center justify-center rounded-full text-white shadow-lg transition hover:opacity-90 active:scale-95 md:bottom-8"
-          style={{ backgroundColor: APP_PRIMARY }}
+          className="fixed bottom-20 right-4 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:opacity-90 active:scale-95 md:bottom-8"
           aria-label="Nuevo evento"
         >
           <span className="material-symbols-outlined text-3xl">edit_calendar</span>
@@ -316,14 +305,14 @@ export function EventsPage() {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800"
+                className="mb-4 w-full rounded-xl border border-input bg-white px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30"
                 required
               />
               <label className="mb-2 block text-sm font-medium text-slate-700">Descripción</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="mb-4 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800"
+                className="mb-4 w-full rounded-xl border border-input bg-white px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30"
                 rows={3}
               />
               <label className="mb-2 block text-sm font-medium text-slate-700">Fecha y hora</label>
@@ -331,7 +320,7 @@ export function EventsPage() {
                 type="datetime-local"
                 value={eventDate}
                 onChange={(e) => setEventDate(e.target.value)}
-                className="mb-6 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-800"
+                className="mb-6 w-full rounded-xl border border-input bg-white px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30"
                 required
               />
               <div className="flex justify-end gap-2">
@@ -365,8 +354,7 @@ export function EventsPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-70"
-                  style={{ backgroundColor: APP_PRIMARY }}
+                  className="rounded-xl px-4 py-2 text-sm font-medium bg-primary text-primary-foreground disabled:opacity-70"
                 >
                   Guardar
                 </button>

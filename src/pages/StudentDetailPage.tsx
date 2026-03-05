@@ -11,8 +11,6 @@ import { fetchDocumentCategories } from '@/services/document-categories.service'
 import { useAuth } from '@/contexts/AuthContext';
 import { SelectEntityDialog } from '@/components/SelectEntityDialog';
 
-const PRIMARY = '#136dec';
-
 function fileNameFromUrl(url: string): string {
   try {
     const segment = url.split('/').filter(Boolean).pop();
@@ -157,7 +155,7 @@ export function StudentDetailPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-8">
-      {/* Header: back + title + menu */}
+      {/* Header: back + title */}
       <div className="flex items-center justify-between py-4">
         <button
           type="button"
@@ -168,13 +166,7 @@ export function StudentDetailPage() {
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <h1 className="text-lg font-bold text-slate-800">Perfil del estudiante</h1>
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center rounded-full text-slate-600 hover:bg-slate-200"
-          aria-label="Más opciones"
-        >
-          <span className="material-symbols-outlined">more_vert</span>
-        </button>
+        <div className="size-10" aria-hidden />
       </div>
 
       {/* Card: avatar, name, grade, ID (CURP), Edit / Delete */}
@@ -190,13 +182,12 @@ export function StudentDetailPage() {
             <>
               <h2 className="mt-3 text-xl font-bold text-slate-800">{student.fullName}</h2>
               <p className="mt-1 text-sm text-slate-600">Grado {student.grade}</p>
-              <p className="mt-1 text-sm font-medium" style={{ color: PRIMARY }}>ID: {student.curp}</p>
+              <p className="mt-1 text-sm font-medium text-primary">ID: {student.curp}</p>
               <div className="mt-4 flex w-full max-w-xs gap-3">
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium text-white"
-                  style={{ backgroundColor: PRIMARY }}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium bg-primary text-primary-foreground"
                 >
                   <span className="material-symbols-outlined text-lg">edit</span>
                   Editar
@@ -215,26 +206,26 @@ export function StudentDetailPage() {
             <form onSubmit={handleUpdate} className="mt-3 w-full max-w-sm space-y-3 text-left">
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Nombre completo</label>
-                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required />
+                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">CURP</label>
-                <input type="text" value={curp} onChange={(e) => setCurp(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required />
+                <input type="text" value={curp} onChange={(e) => setCurp(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Grado</label>
-                <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required placeholder="ej. 3A" />
+                <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required placeholder="ej. 3A" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Estado</label>
-                <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800">
+                <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30">
                   <option value="active">Activo</option>
                   <option value="inactive">Inactivo</option>
                 </select>
               </div>
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setEditing(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600">Cancelar</button>
-                <button type="submit" disabled={saving} className="rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-70" style={{ backgroundColor: PRIMARY }}>Guardar</button>
+                <button type="submit" disabled={saving} className="rounded-xl px-4 py-2 text-sm font-medium bg-primary text-primary-foreground disabled:opacity-70">Guardar</button>
               </div>
             </form>
           )}
@@ -245,7 +236,7 @@ export function StudentDetailPage() {
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-800">Documentos subidos</h2>
-          <Link to={`/documents?studentId=${studentId}`} className="text-sm font-medium" style={{ color: PRIMARY }}>Añadir nuevo</Link>
+          <Link to={`/documents?studentId=${studentId}`} className="text-sm font-medium text-primary">Añadir nuevo</Link>
         </div>
         <ul className="mt-4 space-y-3">
           {documents.length === 0 ? (
@@ -294,7 +285,7 @@ export function StudentDetailPage() {
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-800">Padres / Tutores</h2>
-          <button type="button" onClick={() => setShowAssociate(true)} className="text-sm font-medium" style={{ color: PRIMARY }}>Añadir</button>
+          <button type="button" onClick={() => setShowAssociate(true)} className="text-sm font-medium text-primary">Añadir</button>
         </div>
         <ul className="mt-4 space-y-3">
           {parents.length === 0 ? (

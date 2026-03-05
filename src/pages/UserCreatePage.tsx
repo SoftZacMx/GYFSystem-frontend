@@ -6,8 +6,6 @@ import { ApiError } from '@/types/api';
 import { createUser } from '@/services/users.service';
 import { fetchUserTypes, fetchRoles } from '@/services/catalogs.service';
 
-const PRIMARY = '#136dec';
-
 export function UserCreatePage() {
   const navigate = useNavigate();
   const [userTypes, setUserTypes] = useState<CatalogItem[]>([]);
@@ -70,40 +68,40 @@ export function UserCreatePage() {
           <form onSubmit={handleCreate} className="mt-4 w-full max-w-sm space-y-3 text-left">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Nombre</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required placeholder="Ej. María García" />
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required placeholder="Ej. María García" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required placeholder="correo@ejemplo.com" />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required placeholder="correo@ejemplo.com" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Contraseña</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required minLength={6} placeholder="Mínimo 6 caracteres" />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required minLength={6} placeholder="Mínimo 6 caracteres" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Tipo de usuario</label>
-              <select value={userTypeId === '' ? '' : userTypeId} onChange={(e) => setUserTypeId(e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required>
+              <select value={userTypeId === '' ? '' : userTypeId} onChange={(e) => setUserTypeId(e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required>
                 <option value="">Seleccionar</option>
                 {userTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Rol</label>
-              <select value={roleId === '' ? '' : roleId} onChange={(e) => setRoleId(e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800" required>
+              <select value={roleId === '' ? '' : roleId} onChange={(e) => setRoleId(e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required>
                 <option value="">Seleccionar</option>
                 {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Estado</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-800">
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30">
                 <option value="active">Activo</option>
                 <option value="inactive">Inactivo</option>
               </select>
             </div>
             <div className="flex gap-2 pt-4">
               <button type="button" onClick={() => navigate('/users')} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600">Cancelar</button>
-              <button type="submit" disabled={saving} className="flex-1 rounded-xl px-4 py-2 text-sm font-medium text-white disabled:opacity-70" style={{ backgroundColor: PRIMARY }}>Crear usuario</button>
+              <button type="submit" disabled={saving} className="flex-1 rounded-xl px-4 py-2 text-sm font-medium bg-primary text-primary-foreground disabled:opacity-70">Crear usuario</button>
             </div>
           </form>
         </div>

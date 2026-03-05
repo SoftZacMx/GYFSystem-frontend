@@ -4,9 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isStaffRole } from '@/types/auth';
 import { fetchDashboard } from '@/services/dashboard.service';
 import { fetchMyStudents } from '@/services/students.service';
-import { StatCard } from '@/components/StatCard';
-
-const PRIMARY = '#136dec';
+import { StatCard, type StatCardConfig } from '@/components/StatCard';
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -72,7 +70,7 @@ export function DashboardPage() {
       value: string | number;
       trend?: string;
       trendUp?: boolean;
-      config: { icon: string; iconBg: string };
+      config: StatCardConfig;
     }> = [];
     if (staff) {
       cards.push(
@@ -81,25 +79,25 @@ export function DashboardPage() {
           value: loading ? '...' : stats.students,
           trend: '+3%',
           trendUp: true,
-          config: { icon: 'group', iconBg: '#dbeafe' },
+          config: { icon: 'group', iconClassName: 'bg-primary/20 text-primary' },
         },
         {
           label: 'Usuarios activos',
           value: loading ? '...' : stats.users,
-          config: { icon: 'person_check', iconBg: '#d1fae5' },
+          config: { icon: 'person_check', iconClassName: 'bg-primary/25 text-primary' },
         },
       );
     }
     cards.push({
       label: 'Eventos',
       value: loading ? '...' : String(stats.events).padStart(2, '0'),
-      config: { icon: 'event', iconBg: '#e9d5ff' },
+      config: { icon: 'event', iconClassName: 'bg-accent/25 text-accent' },
     });
     return cards;
   }, [staff, loading, stats.students, stats.users, stats.events]);
 
   return (
-    <div className="min-h-full bg-[#f6f7f8] font-display">
+    <div className="min-h-full bg-muted font-display">
       <div className="mx-auto max-w-5xl px-4 py-6">
         <h1 className="text-2xl font-bold tracking-tight text-slate-800 md:text-3xl">
           Dashboard
@@ -123,7 +121,7 @@ export function DashboardPage() {
             <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:min-h-0">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-slate-800">Alumnos asignados</h2>
-                <Link to="/students" className="text-sm font-medium" style={{ color: PRIMARY }}>
+                <Link to="/students" className="text-sm font-medium text-primary">
                   Ver todos
                 </Link>
               </div>
@@ -162,8 +160,7 @@ export function DashboardPage() {
             {staff && (
               <Link
                 to="/students"
-                className="flex items-center gap-2 rounded-xl px-5 py-3 text-white font-medium shadow-sm transition hover:opacity-90"
-                style={{ backgroundColor: PRIMARY }}
+                className="flex items-center gap-2 rounded-xl px-5 py-3 bg-primary text-primary-foreground font-medium shadow-sm transition hover:opacity-90"
               >
                 <span className="material-symbols-outlined">person_add</span>
                 Añadir estudiante
@@ -171,14 +168,14 @@ export function DashboardPage() {
             )}
             <Link
               to="/documents"
-              className="flex items-center gap-2 rounded-xl bg-slate-800 px-5 py-3 font-medium text-white shadow-sm transition hover:opacity-90"
+              className="flex items-center gap-2 rounded-xl bg-accent px-5 py-3 font-medium text-accent-foreground shadow-sm transition hover:opacity-90"
             >
               <span className="material-symbols-outlined">upload_file</span>
               Subir archivo
             </Link>
             <Link
               to="/notifications"
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+              className="flex items-center gap-2 rounded-xl border-2 border-accent bg-white px-5 py-3 font-medium text-accent shadow-sm transition hover:bg-accent/10"
             >
               <span className="material-symbols-outlined">mail</span>
               Notificaciones
@@ -205,7 +202,7 @@ export function DashboardPage() {
                       style={{
                         height: `${(d.studentsWithAllCategories / chartMax) * 100}%`,
                         minHeight: d.studentsWithAllCategories > 0 ? 24 : 4,
-                        backgroundColor: i % 2 === 0 ? '#93c5fd' : PRIMARY,
+                        backgroundColor: i % 2 === 0 ? 'hsl(var(--primary-muted))' : 'hsl(var(--primary))',
                       }}
                     />
                     <span className="text-xs text-slate-500 truncate w-full text-center" title={d.grade}>
@@ -225,7 +222,7 @@ export function DashboardPage() {
           <section className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-800">Subidas recientes</h2>
-              <Link to="/documents" className="text-sm font-medium" style={{ color: PRIMARY }}>
+              <Link to="/documents" className="text-sm font-medium text-primary">
                 Ver todo
               </Link>
             </div>

@@ -8,7 +8,7 @@ module.exports = {
         display: ['Lexend', 'sans-serif'],
       },
       colors: {
-        'login-primary': '#136dec',
+        'login-primary': 'hsl(var(--primary))',
         'login-bg-light': '#f6f7f8',
         'login-bg-dark': '#101822',
         border: 'hsl(var(--border))',
@@ -19,6 +19,8 @@ module.exports = {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
+          hover: 'hsl(var(--primary-hover))',
+          muted: 'hsl(var(--primary-muted))',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
