@@ -17,6 +17,7 @@ export function UserCreatePage() {
   const [userTypeId, setUserTypeId] = useState<number | ''>('');
   const [roleId, setRoleId] = useState<number | ''>('');
   const [status, setStatus] = useState('active');
+  const [activateAccount, setActivateAccount] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export function UserCreatePage() {
       return;
     }
     setSaving(true);
-    createUser({ name: name.trim(), email: email.trim(), password, userTypeId, roleId, status })
+    createUser({ name: name.trim(), email: email.trim(), password, userTypeId, roleId, status, activateAccount })
       .then((u) => {
         toast.success('Usuario creado');
         navigate(`/users/${u.id}`);
@@ -101,6 +102,18 @@ export function UserCreatePage() {
                 <option value="active">Activo</option>
                 <option value="inactive">Inactivo</option>
               </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="activateAccount"
+                checked={activateAccount}
+                onChange={(e) => setActivateAccount(e.target.checked)}
+                className="h-4 w-4 rounded border-input text-primary focus:ring-primary/30"
+              />
+              <label htmlFor="activateAccount" className="text-sm font-medium text-slate-700">
+                Activar cuenta al crear (no enviar correo de verificación)
+              </label>
             </div>
             <div className="flex gap-2 pt-4">
               <button type="button" onClick={() => navigate('/users')} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600">Cancelar</button>

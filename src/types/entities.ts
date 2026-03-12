@@ -16,6 +16,8 @@ export interface CreateUserBody {
   userTypeId: number;
   roleId: number;
   status: string;
+  /** Si true, la cuenta se activa al crear y no se envía correo de verificación (opcional, default false). */
+  activateAccount?: boolean;
 }
 
 export interface UpdateUserBody {
