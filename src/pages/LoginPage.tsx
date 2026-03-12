@@ -8,6 +8,10 @@ import { ApiError } from '@/types/api';
 const APP_NAME = 'Get Your Files';
 const APP_TAGLINE = 'Gestión documental y académica';
 
+/** Credenciales por defecto para entorno demo (admin del seed) */
+const DEMO_ADMIN_EMAIL = 'admin@filesmanager.com';
+const DEMO_ADMIN_PASSWORD = 'password123';
+
 /** Logo: icono School (Material Symbols) en círculo blanco con sombra */
 function LoginLogo({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const isSm = size === 'sm';
@@ -27,8 +31,8 @@ function LoginLogo({ size = 'md' }: { size?: 'sm' | 'md' }) {
 }
 
 export function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEMO_ADMIN_EMAIL);
+  const [password, setPassword] = useState(DEMO_ADMIN_PASSWORD);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [staySignedIn, setStaySignedIn] = useState(false);
