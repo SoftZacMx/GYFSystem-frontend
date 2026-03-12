@@ -6,6 +6,7 @@ import type { UserDto, CatalogItem, StudentOfParentDto } from '@/types/entities'
 import { ApiError } from '@/types/api';
 import { fetchUserById, updateUser, deleteUser } from '@/services/users.service';
 import { fetchUserTypes, fetchRoles } from '@/services/catalogs.service';
+import { getRoleOptions, getRoleLabel } from '@/constants/roles';
 import { fetchStudentsByUserId, associateParentStudent } from '@/services/parent-students.service';
 import { SelectEntityDialog } from '@/components/SelectEntityDialog';
 
@@ -53,7 +54,7 @@ export function UserDetailPage() {
   }, [userId, navigate]);
 
   const userTypeName = userTypes.find((t) => t.id === user?.userTypeId)?.name ?? '';
-  const roleName = roles.find((r) => r.id === user?.roleId)?.name ?? '';
+  const roleName = user ? getRoleLabel(user.roleId, roles) : '';
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,7 +179,9 @@ export function UserDetailPage() {
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Rol</label>
                 <select value={roleId} onChange={(e) => setRoleId(Number(e.target.value))} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30">
-                  {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  {getRoleOptions(roles).map((o) => (
+                    <option key={o.key} value={o.key}>{o.value}</option>
+                  ))}
                 </select>
               </div>
               <div>

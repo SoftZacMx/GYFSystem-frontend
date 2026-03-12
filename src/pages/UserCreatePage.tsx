@@ -5,6 +5,7 @@ import type { CatalogItem } from '@/types/entities';
 import { ApiError } from '@/types/api';
 import { createUser } from '@/services/users.service';
 import { fetchUserTypes, fetchRoles } from '@/services/catalogs.service';
+import { getRoleOptions } from '@/constants/roles';
 
 export function UserCreatePage() {
   const navigate = useNavigate();
@@ -89,7 +90,9 @@ export function UserCreatePage() {
               <label className="mb-1 block text-sm font-medium text-slate-700">Rol</label>
               <select value={roleId === '' ? '' : roleId} onChange={(e) => setRoleId(e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-xl border border-input px-3 py-2 text-slate-800 focus:outline-0 focus:ring-2 focus:ring-primary/30" required>
                 <option value="">Seleccionar</option>
-                {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                {getRoleOptions(roles).map((o) => (
+                  <option key={o.key} value={o.key}>{o.value}</option>
+                ))}
               </select>
             </div>
             <div>
