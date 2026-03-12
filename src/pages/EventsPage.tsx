@@ -9,6 +9,9 @@ import { fetchEvents, createEvent, updateEvent, deleteEvent } from '@/services/e
 const WEEKDAYS = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
+/** Used for tab underline/badge when Tailwind theme vars are not enough (e.g. inline style) */
+const APP_PRIMARY = '#136dec';
+
 type ViewTab = 'calendar' | 'list' | 'pending';
 
 function formatEventDate(d: string): string {
@@ -140,7 +143,6 @@ export function EventsPage() {
               { id: 'list' as ViewTab, label: 'Vista lista' },
               { id: 'pending' as ViewTab, label: 'Pendientes' },
             ] as const
-<<<<<<< HEAD
           ).map((item) => {
             const { id, label } = item;
             return (
@@ -161,24 +163,6 @@ export function EventsPage() {
               </button>
             );
           })}
-=======
-          ).map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              className={`relative pb-3 pt-1 text-sm font-medium transition ${tab === id ? 'text-primary' : 'text-slate-500'}`}
-            >
-              {label}
-              {tab === id && (
-                <span
-                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary"
-                />
-              )}
-            </button>
-          ))}
->>>>>>> b4633f12d8e7a7fdca264343ea910c37926967c1
         </div>
       </div>
 
