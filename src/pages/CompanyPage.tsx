@@ -48,6 +48,12 @@ export function CompanyPage() {
   const [timezone, setTimezone] = useState('');
   const [showLogoInput, setShowLogoInput] = useState(false);
   const [logoInput, setLogoInput] = useState('');
+  const [smtpHost, setSmtpHost] = useState('');
+  const [smtpPort, setSmtpPort] = useState('');
+  const [smtpUser, setSmtpUser] = useState('');
+  const [smtpPass, setSmtpPass] = useState('');
+  const [smtpFrom, setSmtpFrom] = useState('');
+  const [smtpExpanded, setSmtpExpanded] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -60,6 +66,11 @@ export function CompanyPage() {
         setAddress(data.address ?? '');
         setLogoUrl(data.logoUrl ?? '');
         setTimezone(data.timezone ?? '');
+        setSmtpHost(data.smtpHost ?? '');
+        setSmtpPort(data.smtpPort != null ? String(data.smtpPort) : '');
+        setSmtpUser(data.smtpUser ?? '');
+        setSmtpPass('');
+        setSmtpFrom(data.smtpFrom ?? '');
         setIsCreate(false);
       })
       .catch(() => {
@@ -70,6 +81,11 @@ export function CompanyPage() {
         setAddress('');
         setLogoUrl('');
         setTimezone('');
+        setSmtpHost('');
+        setSmtpPort('');
+        setSmtpUser('');
+        setSmtpPass('');
+        setSmtpFrom('');
         setIsCreate(true);
       })
       .finally(() => setLoading(false));
@@ -83,7 +99,8 @@ export function CompanyPage() {
     e.preventDefault();
     if (!name.trim() || !email.trim()) return;
     setSaving(true);
-    const body = {
+    const portNum = smtpPort.trim() ? parseInt(smtpPort.trim(), 10) : null;
+    const body: Parameters<typeof updateCompany>[1] = {
       name: name.trim(),
       email: email.trim(),
       phone: phone.trim() || null,
@@ -91,8 +108,13 @@ export function CompanyPage() {
       logoUrl: logoUrl.trim() || null,
       timezone: timezone.trim() || null,
       themeConfig: { primaryColor, accentColor },
+      smtpHost: smtpHost.trim() || null,
+      smtpPort: portNum ?? null,
+      smtpUser: smtpUser.trim() || null,
+      smtpFrom: smtpFrom.trim() || null,
     };
-    const promise = isCreate ? createCompany(body) : updateCompany(company!.id, body);
+    if (smtpPass.trim()) body.smtpPass = smtpPass.trim();
+    const promise = isCreate ? createCompany(body as Parameters<typeof createCompany>[0]) : updateCompany(company!.id, body);
     promise
       .then((data) => {
         setCompany(data);
@@ -324,6 +346,84 @@ export function CompanyPage() {
                   <p className="mt-1 text-xs text-slate-500">{address.length}/{MAX_ADDRESS}</p>
                 </div>
               </div>
+            </section>
+
+            {/* Configuración SMTP para envío de correos (colapsable) */}
+            <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
+              <button
+                type="button"
+                onClick={() => setSmtpExpanded((v) => !v)}
+                className="flex w-full items-center justify-between px-5 py-4 text-left transition hover:bg-slate-50"
+                aria-expanded={smtpExpanded}
+              >
+                <span className="flex items-center gap-2 text-base font-bold text-slate-800">
+                  <span className="material-symbols-outlined text-xl text-slate-600">mail</span>
+                  Configuración de correo (SMTP)
+                </span>
+                <span className={`material-symbols-outlined text-slate-500 transition ${smtpExpanded ? 'rotate-180' : ''}`}>
+                  expand_more
+                </span>
+              </button>
+              {smtpExpanded && (
+                <div className="border-t border-slate-200 px-5 pb-5 pt-4">
+                  <p className="mb-4 text-sm text-slate-500">
+                    Si se completan, los correos del sistema (verificación, recuperación de contraseña, notificaciones) se enviarán con esta configuración. La contraseña se guarda cifrada.
+                  </p>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">Host SMTP</label>
+                      <input
+                        type="text"
+                        value={smtpHost}
+                        onChange={(e) => setSmtpHost(e.target.value)}
+                        placeholder="ej. sandbox.smtp.mailtrap.io"
+                        className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">Puerto</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={smtpPort}
+                        onChange={(e) => setSmtpPort(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                        placeholder="2525, 587, 465"
+                        className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">Usuario SMTP</label>
+                      <input
+                        type="text"
+                        value={smtpUser}
+                        onChange={(e) => setSmtpUser(e.target.value)}
+                        placeholder="Usuario del servidor"
+                        className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">Contraseña SMTP</label>
+                      <input
+                        type="password"
+                        value={smtpPass}
+                        onChange={(e) => setSmtpPass(e.target.value)}
+                        placeholder={company ? 'Dejar en blanco para no cambiar' : 'Contraseña'}
+                        className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="mb-2 block text-sm font-medium text-slate-700">Remitente (From)</label>
+                      <input
+                        type="text"
+                        value={smtpFrom}
+                        onChange={(e) => setSmtpFrom(e.target.value)}
+                        placeholder="GYF System &lt;noreply@gyfsystem.com&gt;"
+                        className="w-full rounded-xl border border-input bg-slate-100 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </section>
 
             <button

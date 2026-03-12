@@ -132,6 +132,11 @@ export interface CompanyDto {
   logoUrl: string | null;
   timezone: string | null;
   themeConfig: CompanyThemeConfig | null;
+  smtpHost: string | null;
+  smtpPort: number | null;
+  smtpUser: string | null;
+  smtpPass: string | null;
+  smtpFrom: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -144,6 +149,11 @@ export interface CreateCompanyBody {
   logoUrl?: string | null;
   timezone?: string | null;
   themeConfig?: CompanyThemeConfig | null;
+  smtpHost?: string | null;
+  smtpPort?: number | null;
+  smtpUser?: string | null;
+  smtpPass?: string | null;
+  smtpFrom?: string | null;
 }
 
 export interface UpdateCompanyBody {
@@ -154,6 +164,11 @@ export interface UpdateCompanyBody {
   logoUrl?: string | null;
   timezone?: string | null;
   themeConfig?: CompanyThemeConfig | null;
+  smtpHost?: string | null;
+  smtpPort?: number | null;
+  smtpUser?: string | null;
+  smtpPass?: string | null;
+  smtpFrom?: string | null;
 }
 
 export interface CatalogItem {
