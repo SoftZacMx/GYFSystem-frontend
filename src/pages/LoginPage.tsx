@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { login as loginApi } from '@/services/auth.service';
@@ -10,7 +10,6 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,7 +88,7 @@ export function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="Correo del centro"
-                className="h-14 md:h-[3.25rem] w-full rounded-xl border border-[#136dec]/20 bg-white pl-11 pr-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-[#136dec]/50"
+                className="h-14 md:h-[3.25rem] w-full rounded-xl border border-primary/20 bg-white pl-11 pr-3 text-base text-slate-900 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary/50"
               />
             </div>
           </div>
@@ -106,7 +105,7 @@ export function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Tu contraseña"
-                className="h-14 md:h-[3.25rem] w-full rounded-xl border border-[#136dec]/20 bg-white pl-11 pr-12 text-base text-slate-900 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-[#136dec]/50"
+                className="h-14 md:h-[3.25rem] w-full rounded-xl border border-primary/20 bg-white pl-11 pr-12 text-base text-slate-900 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary/50"
               />
               <button
                 type="button"
@@ -121,36 +120,21 @@ export function LoginPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-5 w-5 rounded border-[#136dec]/30 bg-white text-login-primary focus:ring-login-primary"
-              />
-              <span className="text-sm font-medium text-slate-600">Recordarme</span>
-            </label>
-            <a href="#" className="text-sm font-semibold text-[#136dec] hover:underline">
+          <div className="flex justify-end">
+            <Link to="/auth/forgot-password" className="text-sm font-semibold text-primary hover:underline">
               ¿Olvidaste tu contraseña?
-            </a>
+            </Link>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="flex h-14 md:h-16 w-full items-center justify-center gap-2 rounded-xl bg-[#136dec] px-6 py-4 font-bold text-white shadow-md shadow-[#136dec]/25 transition hover:bg-[#136dec]/90 active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 md:text-base"
+            className="flex h-14 md:h-16 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 font-bold text-primary-foreground shadow-md shadow-primary/25 transition hover:bg-primary-hover active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 md:text-base"
           >
             <span>{loading ? 'Entrando...' : 'Iniciar sesión'}</span>
             <span className="material-symbols-outlined">arrow_forward</span>
           </button>
 
-          <p className="pt-4 md:pt-6 text-center text-sm md:text-base text-slate-600">
-            ¿No tienes cuenta?{' '}
-            <a href="#" className="font-bold text-[#136dec] hover:underline">
-              Contacta al administrador
-            </a>
-          </p>
         </form>
 
           {/* Footer */}

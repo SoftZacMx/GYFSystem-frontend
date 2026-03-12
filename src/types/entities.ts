@@ -118,6 +118,11 @@ export interface NotificationDto {
   createdAt: string;
 }
 
+export interface CompanyThemeConfig {
+  primaryColor?: string;
+  accentColor?: string;
+}
+
 export interface CompanyDto {
   id: number;
   name: string;
@@ -126,6 +131,7 @@ export interface CompanyDto {
   address: string | null;
   logoUrl: string | null;
   timezone: string | null;
+  themeConfig: CompanyThemeConfig | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -137,6 +143,7 @@ export interface CreateCompanyBody {
   address?: string | null;
   logoUrl?: string | null;
   timezone?: string | null;
+  themeConfig?: CompanyThemeConfig | null;
 }
 
 export interface UpdateCompanyBody {
@@ -146,6 +153,7 @@ export interface UpdateCompanyBody {
   address?: string | null;
   logoUrl?: string | null;
   timezone?: string | null;
+  themeConfig?: CompanyThemeConfig | null;
 }
 
 export interface CatalogItem {

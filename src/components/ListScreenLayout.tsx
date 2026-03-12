@@ -1,9 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 
-const APP_PRIMARY = '#136dec';
-const APP_BG = '#f6f7f8';
-
 export interface ListScreenLayoutProps {
   title: string;
   icon?: string;
@@ -32,15 +29,12 @@ export function ListScreenLayout({
   children,
 }: ListScreenLayoutProps) {
   return (
-    <div className="min-h-full font-display" style={{ backgroundColor: APP_BG }}>
+    <div className="min-h-full bg-muted font-display">
       {/* Header */}
       <div className="relative flex items-center justify-center px-4 pt-4 pb-3">
         <div className="flex items-center gap-3">
-          <div
-            className="flex size-10 shrink-0 items-center justify-center rounded-full text-white"
-            style={{ backgroundColor: `${APP_PRIMARY}20` }}
-          >
-            <span className="material-symbols-outlined text-2xl" style={{ color: APP_PRIMARY }}>
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+            <span className="material-symbols-outlined text-2xl">
               {icon}
             </span>
           </div>
@@ -50,11 +44,10 @@ export function ListScreenLayout({
           <button
             type="button"
             onClick={onAdd}
-            className="absolute right-4 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-white transition hover:opacity-90"
-            style={{ backgroundColor: `${APP_PRIMARY}20` }}
+            className="absolute right-4 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-accent/20 text-accent transition hover:opacity-90"
             aria-label={addLabel}
           >
-            <span className="material-symbols-outlined text-2xl" style={{ color: APP_PRIMARY }}>
+            <span className="material-symbols-outlined text-2xl">
               person_add
             </span>
           </button>
@@ -73,7 +66,7 @@ export function ListScreenLayout({
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-[#136dec]/30"
+              className="w-full rounded-xl border border-input bg-white py-3 pl-10 pr-4 text-slate-800 placeholder:text-slate-400 focus:outline-0 focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </div>
@@ -90,8 +83,7 @@ export function ListScreenLayout({
         <button
           type="button"
           onClick={onFabClick}
-          className="fixed bottom-20 right-4 flex size-14 items-center justify-center rounded-full text-white shadow-lg transition hover:opacity-90 active:scale-95"
-          style={{ backgroundColor: APP_PRIMARY }}
+          className="fixed bottom-20 right-4 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:opacity-90 active:scale-95"
           aria-label="Añadir"
         >
           <span className="material-symbols-outlined text-3xl">add</span>
@@ -118,12 +110,7 @@ export function FilterPills<T extends string>({
       <button
         type="button"
         onClick={() => onChange('all')}
-        className="shrink-0 rounded-full px-4 py-2 text-sm font-medium transition"
-        style={
-          activeId === 'all'
-            ? { backgroundColor: '#136dec', color: 'white' }
-            : { backgroundColor: '#e2e8f0', color: '#475569' }
-        }
+        className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${activeId === 'all' ? 'bg-primary text-primary-foreground' : 'bg-slate-200 text-slate-600'}`}
       >
         {labelAll}
       </button>
@@ -132,12 +119,7 @@ export function FilterPills<T extends string>({
           key={id}
           type="button"
           onClick={() => onChange(id)}
-          className="shrink-0 rounded-full px-4 py-2 text-sm font-medium transition"
-          style={
-            activeId === id
-              ? { backgroundColor: '#136dec', color: 'white' }
-              : { backgroundColor: '#e2e8f0', color: '#475569' }
-          }
+          className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${activeId === id ? 'bg-primary text-primary-foreground' : 'bg-slate-200 text-slate-600'}`}
         >
           {label}
         </button>

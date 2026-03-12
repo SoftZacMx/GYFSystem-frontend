@@ -6,14 +6,14 @@ import { ThemePicker } from '@/components/ThemePicker';
 import { SidebarUserInfo } from '@/components/SidebarUserInfo';
 import { fetchMyNotifications } from '@/services/notifications.service';
 
-const navItems: { to: string; label: string; icon: string; staffOnly: boolean }[] = [
+const navItems: { to: string; label: string; icon: string; staffOnly: boolean; adminOnly?: boolean }[] = [
   { to: '/', label: 'Inicio', icon: 'home', staffOnly: false },
   { to: '/users', label: 'Usuarios', icon: 'group', staffOnly: true },
   { to: '/students', label: 'Estudiantes', icon: 'school', staffOnly: false },
   { to: '/documents', label: 'Documentos', icon: 'description', staffOnly: false },
-  { to: '/document-categories', label: 'Categorías de documentos', icon: 'folder', staffOnly: true },
+  { to: '/document-categories', label: 'Categorías de documentos', icon: 'folder', staffOnly: true, adminOnly: true },
   { to: '/events', label: 'Eventos', icon: 'event', staffOnly: false },
-  { to: '/company', label: 'Empresa', icon: 'business', staffOnly: true },
+  { to: '/company', label: 'Empresa', icon: 'business', staffOnly: true, adminOnly: true },
 ];
 
 export function Sidebar({
@@ -29,7 +29,12 @@ export function Sidebar({
 }) {
   const { user, logout } = useAuth();
   const staff = user ? isStaffRole(user.roleId) : false;
-  const items = staff ? navItems : navItems.filter((item) => !item.staffOnly);
+  const isAdmin = user?.roleId === 1;
+  const items = navItems.filter((item) => {
+    if (item.adminOnly) return isAdmin;
+    if (item.staffOnly) return staff;
+    return true;
+  });
   const isNarrow = collapsible && collapsed;
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -98,7 +103,7 @@ export function Sidebar({
                   'flex items-center rounded-lg py-2.5 text-sm font-medium transition ' +
                   (isNarrow ? 'justify-center px-0' : 'gap-3 px-3') +
                   (isActive
-                    ? ' bg-[#136dec]/10 text-[#136dec]'
+                    ? ' bg-primary/10 text-primary'
                     : ' text-slate-600 hover:bg-slate-100 hover:text-slate-800')
                 }
               >

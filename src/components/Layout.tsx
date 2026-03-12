@@ -27,7 +27,7 @@ export function Layout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f6f7f8] font-display">
+    <div className="flex h-screen overflow-hidden bg-muted font-display">
       {/* Sidebar: ocupa todo el alto de la vista */}
       <div
         className={`hidden h-full shrink-0 md:block ${

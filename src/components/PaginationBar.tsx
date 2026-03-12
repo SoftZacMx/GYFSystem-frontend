@@ -52,7 +52,7 @@ export function PaginationBar({
               id="pagination-rows"
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:border-[#136dec] focus:outline-0 focus:ring-1 focus:ring-[#136dec]"
+              className="rounded-lg border border-input bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:border-primary focus:outline-0 focus:ring-1 focus:ring-primary"
             >
               {pageSizeOptions.map((n) => (
                 <option key={n} value={n}>{n}</option>
@@ -90,7 +90,7 @@ export function PaginationBar({
                 onClick={() => onPageChange(n)}
                 className={`min-w-[2rem] rounded px-2 py-1.5 text-sm font-medium transition ${
                   n === page
-                    ? 'bg-[#136dec] text-white'
+                    ? 'bg-primary text-primary-foreground'
                     : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >

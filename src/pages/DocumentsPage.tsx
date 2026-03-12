@@ -19,7 +19,6 @@ import { SelectEntityDialog } from '@/components/SelectEntityDialog';
 import { DocumentCard } from '@/components/DocumentCard';
 import { StudentDocumentsSection } from '@/components/StudentDocumentsSection';
 
-const PRIMARY = '#136dec';
 const MAX_SIZE_MB = 10;
 const ACCEPT = '.pdf,.jpg,.jpeg,.png';
 
@@ -169,23 +168,23 @@ export function DocumentsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-24">
-      <div className="flex items-center justify-between py-4">
+    <div className="mx-auto flex h-full min-h-0 max-w-5xl flex-col overflow-hidden px-4 pb-4">
+      <div className="shrink-0 flex items-center justify-between py-4">
         <h1 className="text-xl font-bold tracking-tight text-slate-800">Repositorio</h1>
       </div>
 
       {/* Student context when coming from list */}
       {student && (
-        <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-4 shrink-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Subiendo para</p>
           <p className="mt-1 font-semibold text-slate-800">{student.fullName}</p>
           <p className="text-sm text-slate-600">{student.curp} · Grado {student.grade}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:min-h-[calc(100vh-12rem)] lg:items-stretch">
-        {/* Upload area — izquierda en desktop (centrado en medio de la vista), arriba en móvil */}
-        <div className="flex flex-col justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-2 lg:auto-rows-1fr">
+        {/* Upload area — altura máxima fija, no crece */}
+        <div className="flex min-h-[280px] max-h-full min-w-0 flex-col justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 lg:min-h-0">
         <form onSubmit={handleUpload} className="flex flex-col items-center">
           <div className="flex size-16 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
             <span className="material-symbols-outlined text-4xl">cloud_upload</span>
@@ -202,8 +201,7 @@ export function DocumentsPage() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="mt-4 rounded-xl px-6 py-3 text-sm font-medium text-white"
-            style={{ backgroundColor: PRIMARY }}
+            className="mt-4 rounded-xl px-6 py-3 text-sm font-medium bg-primary text-primary-foreground"
           >
             Seleccionar archivos
           </button>
@@ -219,7 +217,7 @@ export function DocumentsPage() {
                   <button
                     type="button"
                     onClick={() => setShowStudentDialog(true)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-slate-800 transition hover:bg-slate-50 focus:outline-0 focus:ring-2 focus:ring-[#136dec]/30"
+                    className="w-full rounded-xl border border-input bg-white px-3 py-2.5 text-left text-slate-800 transition hover:bg-slate-50 focus:outline-0 focus:ring-2 focus:ring-primary/30"
                   >
                     {uploadStudentId !== '' ? (
                       <span className="flex items-center justify-between gap-2">
@@ -249,7 +247,7 @@ export function DocumentsPage() {
                 <button
                   type="button"
                   onClick={() => setShowCategoryDialog(true)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left text-slate-800 transition hover:bg-slate-50 focus:outline-0 focus:ring-2 focus:ring-[#136dec]/30"
+                  className="w-full rounded-xl border border-input bg-white px-3 py-2.5 text-left text-slate-800 transition hover:bg-slate-50 focus:outline-0 focus:ring-2 focus:ring-primary/30"
                 >
                   {uploadCategoryId !== '' ? (
                     <span className="flex items-center justify-between gap-2">
@@ -276,8 +274,7 @@ export function DocumentsPage() {
               <button
                 type="submit"
                 disabled={uploading}
-                className="w-full rounded-xl py-2.5 text-sm font-medium text-white disabled:opacity-70"
-                style={{ backgroundColor: PRIMARY }}
+                className="w-full rounded-xl py-2.5 text-sm font-medium bg-primary text-primary-foreground disabled:opacity-70"
               >
                 {uploading ? 'Subiendo...' : 'Subir'}
               </button>
@@ -286,54 +283,56 @@ export function DocumentsPage() {
         </form>
         </div>
 
-        {/* Archivos cargados — derecha en desktop, abajo en móvil */}
-        <section>
-        <h2 className="text-lg font-bold text-slate-800">
-          {isAdmin
-            ? (validStudentId ? 'Documentos del alumno' : 'Documentos recientes')
-            : 'Documentos de mis alumnos'}
-        </h2>
-        {loading ? (
-          <p className="py-6 text-center text-sm text-slate-500">Cargando...</p>
-        ) : isAdmin ? (
-          documents.length === 0 ? (
-            <p className="py-6 text-center text-sm text-slate-500">No hay documentos</p>
-          ) : (
-            <ul className="mt-3 space-y-3">
-              {documents.map((d) => (
-                <DocumentCard
-                  key={d.id}
-                  document={d}
-                  categoryName={getCategoryName(d.categoryId)}
-                  subtitle={`Subido ${new Date(d.uploadedAt).toLocaleDateString('es')}${!validStudentId ? ` · ${getStudentName(d.studentId)}` : ''}`}
-                  onDownload={handleDownload}
-                  onDelete={handleDelete}
-                  downloadingId={downloadingId}
-                />
-              ))}
-            </ul>
-          )
-        ) : groupedByStudent.length === 0 ? (
-          <p className="py-6 text-center text-sm text-slate-500">No hay documentos</p>
-        ) : (
-          <div className="mt-3 space-y-6">
-            {groupedByStudent.map((group) => (
-              <StudentDocumentsSection
-                key={group.student.studentId}
-                student={{
-                  fullName: group.student.fullName,
-                  curp: group.student.curp,
-                  grade: group.student.grade,
-                }}
-                documents={group.documents}
-                getCategoryName={getCategoryName}
-                onDownload={handleDownload}
-                onDelete={handleDelete}
-                downloadingId={downloadingId}
-              />
-            ))}
+        {/* Archivos cargados — altura máxima fija, solo la lista hace scroll */}
+        <section className="flex min-h-[280px] min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white lg:min-h-0">
+          <h2 className="shrink-0 border-b border-slate-100 px-4 py-3 text-lg font-bold text-slate-800">
+            {isAdmin
+              ? (validStudentId ? 'Documentos del alumno' : 'Documentos recientes')
+              : 'Documentos de mis alumnos'}
+          </h2>
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+            {loading ? (
+              <p className="py-6 text-center text-sm text-slate-500">Cargando...</p>
+            ) : isAdmin ? (
+              documents.length === 0 ? (
+                <p className="py-6 text-center text-sm text-slate-500">No hay documentos</p>
+              ) : (
+                <ul className="mt-3 space-y-3 pr-1">
+                  {documents.map((d) => (
+                    <DocumentCard
+                      key={d.id}
+                      document={d}
+                      categoryName={getCategoryName(d.categoryId)}
+                      subtitle={`Subido ${new Date(d.uploadedAt).toLocaleDateString('es')}${!validStudentId ? ` · ${getStudentName(d.studentId)}` : ''}`}
+                      onDownload={handleDownload}
+                      onDelete={handleDelete}
+                      downloadingId={downloadingId}
+                    />
+                  ))}
+                </ul>
+              )
+            ) : groupedByStudent.length === 0 ? (
+              <p className="py-6 text-center text-sm text-slate-500">No hay documentos</p>
+            ) : (
+              <div className="mt-3 space-y-6 pr-1">
+                {groupedByStudent.map((group) => (
+                  <StudentDocumentsSection
+                    key={group.student.studentId}
+                    student={{
+                      fullName: group.student.fullName,
+                      curp: group.student.curp,
+                      grade: group.student.grade,
+                    }}
+                    documents={group.documents}
+                    getCategoryName={getCategoryName}
+                    onDownload={handleDownload}
+                    onDelete={handleDelete}
+                    downloadingId={downloadingId}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
         </section>
       </div>
 

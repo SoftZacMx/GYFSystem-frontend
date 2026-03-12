@@ -46,4 +46,11 @@
     font-family: 'Material Symbols Outlined';
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
+  /* Un solo indicador de foco (el ring del tema); quitar outline nativo que pinta azul+rojo */
+  input:focus,
+  select:focus,
+  textarea:focus,
+  button:focus {
+    outline: none;
+  }
 }
