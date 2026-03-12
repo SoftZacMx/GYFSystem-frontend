@@ -54,3 +54,54 @@
     outline: none;
   }
 }
+
+/* Animación de fondo sutil y constante para el panel de login */
+@keyframes login-bg-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+    opacity: 1;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.95;
+  }
+}
+
+@keyframes login-bg-float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(2%, -1.5%) scale(1.02);
+  }
+  66% {
+    transform: translate(-1.5%, 2%) scale(0.98);
+  }
+}
+
+.login-panel-animated {
+  position: relative;
+  overflow: hidden;
+}
+
+.login-panel-animated::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.06) 0%,
+    hsl(var(--primary) / 0.02) 25%,
+    hsl(var(--primary) / 0.04) 50%,
+    hsl(var(--primary) / 0.02) 75%,
+    hsl(var(--primary) / 0.06) 100%
+  );
+  background-size: 200% 200%;
+  animation: login-bg-shift 18s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.login-panel-animated .login-brand-content {
+  position: relative;
+  z-index: 1;
+}
