@@ -9,6 +9,8 @@ const APP_BG = '#f6f7f8';
 
 type TabId = 'all' | 'unread' | 'admin';
 
+type TabItem = { id: TabId; label: string; badge?: number };
+
 const TYPE_TITLES: Record<string, string> = {
   document: 'Nuevo documento',
   event: 'Recordatorio de evento',
@@ -148,8 +150,10 @@ export function NotificationsPage() {
               { id: 'all' as TabId, label: 'Todas', badge: unreadCount },
               { id: 'unread' as TabId, label: 'No leídas' },
               { id: 'admin' as TabId, label: 'Admin' },
-            ] as const
-          ).map(({ id, label, badge }) => (
+            ] as TabItem[]
+          ).map((tabItem) => {
+            const { id, label, badge } = tabItem;
+            return (
             <button
               key={id}
               type="button"
@@ -175,7 +179,8 @@ export function NotificationsPage() {
                 />
               )}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 

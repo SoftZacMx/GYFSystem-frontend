@@ -145,23 +145,26 @@ export function EventsPage() {
               { id: 'list' as ViewTab, label: 'Vista lista' },
               { id: 'pending' as ViewTab, label: 'Pendientes' },
             ] as const
-          ).map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              className="relative pb-3 pt-1 text-sm font-medium transition"
-              style={{ color: tab === id ? APP_PRIMARY : '#64748b' }}
-            >
-              {label}
-              {tab === id && (
-                <span
-                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                  style={{ backgroundColor: APP_PRIMARY }}
-                />
-              )}
-            </button>
-          ))}
+          ).map((item) => {
+            const { id, label } = item;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTab(id)}
+                className="relative pb-3 pt-1 text-sm font-medium transition"
+                style={{ color: tab === id ? APP_PRIMARY : '#64748b' }}
+              >
+                {label}
+                {tab === id && (
+                  <span
+                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                    style={{ backgroundColor: APP_PRIMARY }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
