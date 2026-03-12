@@ -7,6 +7,10 @@ import { fetchMyNotifications, markNotificationAsRead, markAllNotificationsAsRea
 
 type TabId = 'all' | 'unread' | 'admin';
 
+type TabItem = { id: TabId; label: string; badge?: number };
+
+const APP_PRIMARY = '#136dec';
+
 const TYPE_TITLES: Record<string, string> = {
   document: 'Nuevo documento',
   event: 'Recordatorio de evento',
@@ -130,8 +134,7 @@ export function NotificationsPage() {
             type="button"
             disabled={markingAll}
             onClick={handleMarkAllRead}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium disabled:opacity-70"
-            className="text-primary"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-primary disabled:opacity-70"
           >
             Marcar todas
           </button>
@@ -146,14 +149,15 @@ export function NotificationsPage() {
               { id: 'all' as TabId, label: 'Todas', badge: unreadCount },
               { id: 'unread' as TabId, label: 'No leídas' },
               { id: 'admin' as TabId, label: 'Admin' },
-            ] as const
-          ).map(({ id, label, badge }) => (
+            ] as TabItem[]
+          ).map((tabItem) => {
+            const { id, label, badge } = tabItem;
+            return (
             <button
               key={id}
               type="button"
               onClick={() => setTab(id)}
-              className="relative pb-3 pt-2 text-sm font-medium transition"
-              className={tab === id ? 'text-primary' : 'text-slate-500'}
+              className={`relative pb-3 pt-2 text-sm font-medium transition ${tab === id ? 'text-primary' : 'text-slate-500'}`}
             >
               {label}
               {badge != null && badge > 0 && id === 'all' && (
@@ -166,11 +170,12 @@ export function NotificationsPage() {
               {tab === id && (
                 <span
                   className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-primary"
-                  />
-                )}
-              </button>
-          ))}
+                  style={{ backgroundColor: APP_PRIMARY }}
+                />
+              )}
+            </button>
+            );
+          })}
         </div>
       </div>
 
